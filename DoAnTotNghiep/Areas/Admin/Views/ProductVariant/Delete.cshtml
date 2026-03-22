@@ -1,0 +1,34 @@
+﻿@model DoAnTotNghiep.Models.ProductVariant
+
+@{
+    ViewData["Title"] = "Xác nhận xóa Biến thể";
+}
+
+<div class="card shadow-sm mt-4 border-danger">
+    <div class="card-header bg-danger text-white">
+        <h4 class="mb-0">CẢNH BÁO XÓA PHIÊN BẢN</h4>
+    </div>
+    <div class="card-body">
+        <h5 class="card-title text-danger">Bạn có chắc chắn muốn xóa phiên bản này không?</h5>
+        <hr />
+        <dl class="row">
+            <dt class="col-sm-3">Sản phẩm gốc:</dt>
+            <dd class="col-sm-9 fw-bold">@Model.Product?.ProductName</dd>
+
+            <dt class="col-sm-3">Mã hàng (SKU):</dt>
+            <dd class="col-sm-9 text-primary fw-bold">@Model.SKU</dd>
+
+            <dt class="col-sm-3">Giá cộng thêm:</dt>
+            <dd class="col-sm-9 text-danger">@Model.AdditionalPrice.ToString("#,##0") VNĐ</dd>
+
+            <dt class="col-sm-3">Tồn kho:</dt>
+            <dd class="col-sm-9">@Model.StockQuantity</dd>
+        </dl>
+
+        <form asp-action="Delete" method="post">
+            <input type="hidden" asp-for="VariantId" />
+            <button type="submit" class="btn btn-danger mt-3">✅ Chắc chắn Xóa</button>
+            <a asp-action="Index" asp-route-productId="@Model.ProductId" class="btn btn-secondary mt-3 ms-2">Hủy bỏ</a>
+        </form>
+    </div>
+</div>

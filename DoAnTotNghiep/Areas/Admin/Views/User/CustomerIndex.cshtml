@@ -1,0 +1,116 @@
+﻿@model IEnumerable<DoAnTotNghiep.Models.AppUser>
+
+@{
+    ViewData["Title"] = "Danh sách Khách hàng";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid px-4 mt-4 mb-5">
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show fw-bold shadow-sm" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show fw-bold shadow-sm" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-success m-0">Danh sách Khách hàng</h2>
+
+    </div>
+
+    <div class="card shadow border-0 rounded-4">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped align-middle mb-0">
+                    <thead class="bg-success text-white">
+                        <tr>
+                            <th class="py-3 px-4 text-center" style="width: 5%;">STT</th>
+                            <th class="py-3" style="width: 25%;">Khách hàng</th>
+                            <th class="py-3" style="width: 15%;">Tài khoản</th>
+                            <th class="py-3" style="width: 15%;">Số điện thoại</th>
+                            <th class="py-3" style="width: 15%;">Email</th>
+                            <th class="py-3 text-center" style="width: 10%;">Ngày sinh</th>
+                            <th class="py-3 text-center" style="width: 10%;">Trạng thái</th>
+                            <th class="py-3 text-center" style="width: 10%;">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            int stt = 1;
+                            foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td class="text-center px-4 fw-bold text-muted">@(stt++)</td>
+
+                                    <td class="fw-bold text-dark">
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-light rounded-circle d-flex align-items-center justify-content-center me-3 border" style="width: 40px; height: 40px;">
+                                                👤
+                                            </div>
+                                            @item.FullName
+                                        </div>
+                                    </td>
+
+                                    <td><span class="text-secondary">@item.Username</span></td>
+                                    <td class="fw-bold text-primary">@item.Phone</td>
+                                    <td>@item.Email</td>
+
+                                    <td class="text-center text-muted">
+                                        @(item.DateOfBirth.HasValue? item.DateOfBirth.Value.ToString("dd/MM/yyyy") : "---")
+                                    </td>
+
+                                    <td class="text-center">
+                                        @if (item.IsActive)
+                                        {
+                                            <span class="badge bg-success rounded-pill shadow-sm"><i class="bi bi-check-circle"></i> Hoạt động</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary rounded-pill shadow-sm"><i class="bi bi-lock-fill"></i> Đã khóa</span>
+                                        }
+                                    </td>
+
+                                    <td class="text-center">
+                                        <div class="btn-group shadow-sm">
+                                            <a asp-action="Delete" asp-route-id="@item.UserId"
+                                               class="btn btn-sm @(item.IsActive ? "btn-outline-warning" : "btn-outline-success")"
+                                               onclick="return confirm('Bạn có chắc chắn muốn @(item.IsActive ? "KHÓA" : "MỞ KHÓA") tài khoản khách hàng [@item.FullName] không?');"
+                                               title="@(item.IsActive ? "Khóa tài khoản" : "Mở khóa tài khoản")">
+                                                @(item.IsActive ? "🔒" : "🔓")
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="8" class="text-center py-5 text-muted fw-bold fs-5">
+                                     Chưa có khách hàng nào trong hệ thống!
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .table-hover tbody tr:hover {
+        background-color: #f1f8f5; /* Xanh lá nhạt khi hover */
+        transition: background-color 0.2s ease-in-out;
+    }
+</style>

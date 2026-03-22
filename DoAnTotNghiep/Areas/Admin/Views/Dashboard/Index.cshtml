@@ -1,0 +1,167 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}
+@model IEnumerable<DoAnTotNghiep.Models.Order>
+@{
+    ViewData["Title"] = "Bảng điều khiển Quản trị";
+}
+
+<div class="container-fluid mt-4 mb-5">
+    <h2 class="fw-bold mb-4">📊 THỐNG KÊ SỐ LIỆU</h2>
+
+    <div class="row g-4 mb-5">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white shadow border-0 h-100 rounded-3">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold text-uppercase mb-2">💰 TỔNG DOANH THU</h6>
+                    <h3 class="fw-bold mb-0">@ViewBag.TotalRevenue.ToString("#,##0") đ</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white shadow border-0 h-100 rounded-3">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold text-uppercase mb-2">📦 TỔNG ĐƠN HÀNG</h6>
+                    <h3 class="fw-bold mb-0">@ViewBag.TotalOrders <span class="fs-6 fw-normal">đơn</span></h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark shadow border-0 h-100 rounded-3">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold text-uppercase mb-2">🛍️ SẢN PHẨM</h6>
+                    <h3 class="fw-bold mb-0">@ViewBag.TotalProducts <span class="fs-6 fw-normal">mặt hàng</span></h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white shadow border-0 h-100 rounded-3">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold text-uppercase mb-2">👥 KHÁCH HÀNG</h6>
+                    <h3 class="fw-bold mb-0">@ViewBag.TotalCustomers <span class="fs-6 fw-normal">thành viên</span></h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+
+        <div class="col-lg-7">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white fw-bold py-3 fs-5">
+                    📈 Biểu đồ doanh thu 
+                </div>
+                <div class="card-body">
+                    <canvas id="revenueChart" style="min-height: 350px;"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white fw-bold py-3 fs-5 d-flex justify-content-between align-items-center">
+                    <span>🛒 Đơn hàng mới nhất</span>
+                    <a asp-controller="Order" asp-action="Index" class="btn btn-sm btn-outline-primary">Xem tất cả</a>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Mã đơn</th>
+                                <th>Khách hàng</th>
+                                <th class="text-end">Tổng tiền</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td class="text-danger fw-bold">#@item.OrderId</td>
+                                    <td>
+                                        <div class="fw-bold">@item.CustomerName</div>
+                                        <small class="text-muted">
+                                            @if (item.Status == 0)
+                                            {
+                                                <span class="text-warning">⏳ Chờ duyệt</span>
+                                            }
+                                            else if (item.Status == 1)
+                                            {
+
+                                                <span class="text-info">🚚 Đang giao</span>
+                                            }
+                                            else if (item.Status == 2)
+                                            {
+
+                                                <span class="text-success">✅ Hoàn thành</span>
+                                            }
+                                            else
+                                            {
+
+                                                <span class="text-danger">❌ Đã hủy</span>
+                                            }
+                                        </small>
+                                    </td>
+                                    <td class="text-end fw-bold">@item.TotalAmount.ToString("#,##0") đ</td>
+                                </tr>
+                            }
+                            @if (!Model.Any())
+                            {
+                                <tr><td colspan="3" class="text-center text-muted py-4">Chưa có đơn hàng nào.</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Lấy dữ liệu chuỗi từ ViewBag và chuyển thành mảng Javascript
+        var revenueDataStr = '@ViewBag.RevenueData';
+        var revenueArray = revenueDataStr.split(',').map(Number); // Cắt chuỗi và ép kiểu số
+
+        var ctx = document.getElementById('revenueChart').getContext('2d');
+        var revenueChart = new Chart(ctx, {
+            type: 'bar', // Dạng biểu đồ cột (bạn có thể đổi thành 'line' nếu thích biểu đồ đường)
+            data: {
+                labels: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'],
+                datasets: [{
+                    label: 'Doanh thu (VNĐ)',
+                    data: revenueArray,
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1,
+                    borderRadius: 5 // Bo góc cột cho đẹp
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return value.toLocaleString('vi-VN') + ' đ'; // Format số tiền trên trục Y
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.parsed.y.toLocaleString('vi-VN') + ' đ'; // Format số tiền khi trỏ chuột vào
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+}

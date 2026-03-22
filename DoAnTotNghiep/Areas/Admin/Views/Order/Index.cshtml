@@ -1,0 +1,67 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}
+@model IEnumerable<DoAnTotNghiep.Models.Order>
+@{
+    ViewData["Title"] = "Quản lý Đơn hàng";
+}
+
+<div class="card shadow-sm mt-4">
+    <div class="card-header bg-primary text-white">
+        <h4 class="mb-0">Danh sách Đơn hàng</h4>
+    </div>
+    <div class="card-body">
+        <table class="table table-bordered table-striped">
+            <thead class="table-dark">
+                <tr>
+                    <th>Mã Đơn</th>
+                    <th>Khách hàng</th>
+                    <th>Ngày đặt</th>
+                    <th>Tổng tiền</th>
+                    <th>Trạng thái</th>
+                    <th>Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td class="fw-bold">#@item.OrderId</td>
+                        <td>
+                            <strong>@item.CustomerName</strong><br />
+                            <small class="text-muted">📞 @item.Phone</small>
+                        </td>
+                        <td>@item.OrderDate.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td class="text-danger fw-bold">@item.TotalAmount.ToString("#,##0") đ</td>
+                        <td>
+                            @if (item.Status == 0)
+                            {
+                                <span class="badge bg-warning text-dark">⏳ Chờ duyệt</span>
+                            }
+                            else if (item.Status == 1)
+                            {
+
+                                <span class="badge bg-info">🚚 Đang giao</span>
+                            }
+                            else if (item.Status == 2)
+                            {
+
+                                <span class="badge bg-success">✅ Đã giao</span>
+                            }
+                            else
+                            {
+
+                                <span class="badge bg-danger">❌ Đã hủy</span>
+                            }
+                        </td>
+                        <td>
+                            <a asp-action="Details" asp-route-id="@item.OrderId" class="btn btn-primary btn-sm">👁️ Xem chi tiết</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

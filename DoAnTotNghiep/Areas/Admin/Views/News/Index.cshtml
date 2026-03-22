@@ -1,0 +1,61 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}
+@model IEnumerable<DoAnTotNghiep.Models.News>
+
+@{
+    ViewData["Title"] = "Quản lý Tin tức";
+}
+
+<div class="container mt-4">
+    <h2>Quản lý Tin tức & Bài viết</h2>
+    <p><a asp-action="Create" class="btn btn-primary">Thêm bài viết mới</a></p>
+
+    <table class="table table-bordered table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>Ảnh</th>
+                <th>Tiêu đề</th>
+                <th>Đăng bởi</th>
+                <th>Sửa lần cuối</th>
+                <th>Thao tác</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td style="width: 120px;">
+                        @if (!string.IsNullOrEmpty(item.ImageUrl))
+                        {
+                            <img src="@item.ImageUrl" style="width: 100px; height: auto; border-radius: 5px;" />
+                        }
+                    </td>
+                    <td class="fw-bold">@item.Title</td>
+                    <td>
+                        <span class="d-block text-muted small">@item.CreatedDate.ToString("dd/MM/yyyy HH:mm")</span>
+                        <span class="badge bg-success">@item.CreatedBy</span>
+                    </td>
+
+                    <td>
+                        @if (item.UpdatedDate.HasValue)
+                        {
+                            <span class="d-block text-muted small">@item.UpdatedDate.Value.ToString("dd/MM/yyyy HH:mm")</span>
+                            <span class="badge bg-warning text-dark">@item.UpdatedBy</span>
+                        }
+                        else
+                        {
+                            <span class="text-muted small fst-italic">Chưa chỉnh sửa</span>
+                        }
+                    </td>
+                    <td>
+                        <a asp-action="Edit" asp-route-id="@item.NewsId" class="btn btn-warning btn-sm">Sửa</a>
+                        <a asp-action="Delete" asp-route-id="@item.NewsId" class="btn btn-danger btn-sm">Xóa</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

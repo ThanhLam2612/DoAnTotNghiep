@@ -1,0 +1,63 @@
+﻿@model List<DoAnTotNghiep.Models.CartItem>
+@{
+    ViewData["Title"] = "Thanh toán đơn hàng";
+}
+<div class="container mt-4 mb-5">
+    <h2 class="fw-bold mb-4 text-uppercase">Thanh toán đơn hàng</h2>
+    <div class="row">
+        <div class="col-md-7 mb-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white fw-bold py-3 fs-5">
+                    Thông tin người nhận
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="Checkout" method="post">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Họ và tên khách hàng <span class="text-danger">*</span></label>
+                            <input type="text" name="CustomerName" class="form-control form-control-lg" required placeholder="Nhập họ tên đầy đủ..." value="@ViewBag.FullName" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Số điện thoại <span class="text-danger">*</span></label>
+                            <input type="tel" name="Phone" class="form-control form-control-lg" required placeholder="Nhập số điện thoại liên hệ..." value="@ViewBag.Phone" />
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Địa chỉ giao hàng chi tiết <span class="text-danger">*</span></label>
+                            <textarea name="Address" class="form-control form-control-lg" rows="3" required placeholder="Số nhà, tên đường, phường/xã, quận/huyện..."></textarea>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-danger btn-lg fw-bold py-3 shadow-sm">
+                                XÁC NHẬN ĐẶT HÀNG
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-5">
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-header bg-dark text-white fw-bold py-3 fs-5">
+                    Tóm tắt đơn hàng
+                </div>
+                <div class="card-body p-4">
+                    @foreach (var item in Model)
+                    {
+                        <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                            <div class="d-flex align-items-center">
+                                <img src="@item.ThumbnailUrl" style="width: 50px; height: 50px; object-fit: contain;" class="me-3 border bg-white rounded p-1" />
+                                <div>
+                                    <h6 class="mb-0 fw-bold">@item.ProductName</h6>
+                                    <small class="text-muted">SL: @item.Quantity</small>
+                                </div>
+                            </div>
+                            <span class="text-danger fw-bold">@item.TotalAmount.ToString("#,##0") đ</span>
+                        </div>
+                    }
+                    <div class="d-flex justify-content-between mt-4">
+                        <h5 class="fw-bold">TỔNG CỘNG:</h5>
+                        <h4 class="text-danger fw-bold">@Model.Sum(x => x.TotalAmount).ToString("#,##0") đ</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

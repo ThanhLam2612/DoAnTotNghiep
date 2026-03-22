@@ -1,0 +1,44 @@
+﻿@model DoAnTotNghiep.Models.Product
+
+@{
+    ViewData["Title"] = "Xác nhận xóa Sản phẩm";
+}
+
+<div class="card shadow-sm mt-4 border-danger">
+    <div class="card-header bg-danger text-white">
+        <h4 class="mb-0">CẢNH BÁO: BẠN ĐANG XÓA SẢN PHẨM</h4>
+    </div>
+    <div class="card-body">
+        <h5 class="card-title text-danger">Hành động này không thể hoàn tác. Các file ảnh liên quan cũng sẽ bị xóa!</h5>
+        <hr />
+        <div class="row">
+            <div class="col-md-3 text-center">
+                @if (!string.IsNullOrEmpty(Model.ThumbnailUrl))
+                {
+                    <img src="@Model.ThumbnailUrl" class="img-thumbnail" style="max-width: 100%;" />
+                }
+            </div>
+            <div class="col-md-9">
+                <dl class="row">
+                    <dt class="col-sm-3">Tên sản phẩm:</dt>
+                    <dd class="col-sm-9 fw-bold fs-5 text-primary">@Model.ProductName</dd>
+
+                    <dt class="col-sm-3">Giá bán:</dt>
+                    <dd class="col-sm-9 fw-bold text-danger">@Model.BasePrice.ToString("#,##0") VNĐ</dd>
+
+                    <dt class="col-sm-3">Danh mục:</dt>
+                    <dd class="col-sm-9">@Model.Category?.CategoryName</dd>
+
+                    <dt class="col-sm-3">Thương hiệu:</dt>
+                    <dd class="col-sm-9">@Model.Brand?.BrandName</dd>
+                </dl>
+
+                <form asp-area="Admin" asp-controller="Product" asp-action="Delete" method="post">
+                    <input type="hidden" asp-for="ProductId" />
+                    <button type="submit" class="btn btn-danger btn-lg mt-3">✅ Chắc chắn Xóa</button>
+                    <a asp-action="Index" class="btn btn-secondary btn-lg mt-3 ms-2">Hủy bỏ</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

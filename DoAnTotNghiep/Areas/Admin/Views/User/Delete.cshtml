@@ -1,0 +1,48 @@
+﻿@{
+}
+@model DoAnTotNghiep.Models.AppUser
+
+@{
+    ViewData["Title"] = "Xác nhận xóa tài khoản";
+}
+
+<div class="card shadow-sm mt-4 border-danger">
+    <div class="card-header bg-danger text-white">
+        <h4 class="mb-0">CẢNH BÁO: XÓA TÀI KHOẢN</h4>
+    </div>
+    <div class="card-body">
+        <h5 class="card-title text-danger mb-4">Bạn có chắc chắn muốn xóa vĩnh viễn người dùng này khỏi hệ thống không?</h5>
+
+        <dl class="row bg-light p-3 border rounded">
+            <dt class="col-sm-3">ID Tài khoản:</dt>
+            <dd class="col-sm-9 fw-bold">@Model.UserId</dd>
+
+            <dt class="col-sm-3">Tên đăng nhập:</dt>
+            <dd class="col-sm-9 fw-bold fs-5 text-primary">@Model.Username</dd>
+
+            <dt class="col-sm-3">Quyền hạn (Role):</dt>
+            <dd class="col-sm-9">
+                @if (Model.Role == "Admin")
+                {
+                    <span class="badge bg-danger fs-6">Quản trị viên</span>
+                }
+                else if (Model.Role == "Employee")
+                {
+
+                    <span class="badge bg-success fs-6">Nhân viên</span>
+                }
+                else
+                {
+
+                    <span class="badge bg-secondary fs-6">Khách hàng</span>
+                }
+            </dd>
+        </dl>
+
+        <form asp-action="Delete" method="post" class="mt-4">
+            <input type="hidden" asp-for="UserId" />
+            <button type="submit" class="btn btn-danger btn-lg fw-bold">Chắc chắn Xóa</button>
+            <a asp-action="Index" class="btn btn-secondary btn-lg ms-2">Quay lại</a>
+        </form>
+    </div>
+</div>

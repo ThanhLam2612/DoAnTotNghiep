@@ -1,0 +1,56 @@
+﻿@{
+    ViewData["Title"] = "Liên hệ với chúng tôi";
+}
+<div class="container mt-4 mb-5">
+    <h2 class="fw-bold text-center mb-4 text-uppercase">LIÊN HỆ VỚI CHÚNG TÔI</h2>
+    <hr class="w-25 mx-auto text-primary mb-5" style="height: 3px; border-radius: 5px;">
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success text-center fw-bold fs-5 shadow-sm mb-5">
+            ✅ @TempData["SuccessMessage"]
+        </div>
+    }
+    <div class="row g-5">
+        <div class="col-md-5">
+            <div class="card shadow-sm border-0 h-100 bg-light">
+                <div class="card-body p-4 p-md-5 lh-lg">
+                    <h4 class="fw-bold mb-4 text-primary">THÔNG TIN CỬA HÀNG</h4>
+                    <p class="fs-5"><strong>Địa chỉ:</strong> 123 Đường Công Nghệ, Quận IT, TP. Code</p>
+                    <p class="fs-5"><strong>Điện thoại:</strong> 0987.654.321</p>
+                    <p class="fs-5"><strong>Email:</strong> hotro@myshop.com</p>
+                    <p class="fs-5"><strong>Giờ làm việc:</strong> 08:00 - 22:00 (Cả tuần)</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-7">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body p-4 p-md-5">
+                    <h4 class="fw-bold mb-4">GỬI TIN NHẮN CHO CHÚNG TÔI</h4>
+                    <form asp-controller="Contact" asp-action="SubmitContact" method="post">
+                        <div class="mb-3">
+                            <label class="fw-bold mb-1">Họ và tên <span class="text-danger">*</span></label>
+                            <input type="text" name="name" class="form-control form-control-lg" required placeholder="Nhập tên của bạn..." />
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6 mb-3 mb-md-0">
+                                <label class="fw-bold mb-1">Số điện thoại <span class="text-danger">*</span></label>
+                                <input type="tel" name="phone" class="form-control form-control-lg" required placeholder="Nhập số điện thoại..." />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="fw-bold mb-1">Email liên hệ</label>
+                                <input type="email" name="email" class="form-control form-control-lg" placeholder="Nhập email (không bắt buộc)..." />
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label class="fw-bold mb-1">Nội dung tin nhắn <span class="text-danger">*</span></label>
+                            <textarea name="message" class="form-control form-control-lg" rows="4" required placeholder="Bạn cần hỗ trợ gì?"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow-sm">
+                             GỬI YÊU CẦU TRỢ GIÚP
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
