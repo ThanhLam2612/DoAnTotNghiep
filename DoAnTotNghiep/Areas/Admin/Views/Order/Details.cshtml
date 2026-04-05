@@ -1,0 +1,125 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}
+@model DoAnTotNghiep.Models.Order
+@{
+    ViewData["Title"] = "Chi tiết Đơn hàng #" + Model.OrderId;
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success fw-bold mt-3">@TempData["Success"]</div>
+}
+
+<div class="row mt-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm mb-3">
+            <div class="card-header bg-dark text-white fw-bold">Thông tin nhận hàng</div>
+            <div class="card-body">
+                <p><strong>Người nhận:</strong> @Model.CustomerName</p>
+                <p><strong>Điện thoại:</strong> @Model.Phone</p>
+                <p><strong>Địa chỉ:</strong> @Model.Address</p>
+                <p><strong>Ngày đặt:</strong> @Model.OrderDate.ToString("dd/MM/yyyy HH:mm")</p>
+                <h4 class="text-danger mt-3">Tổng: @Model.TotalAmount.ToString("#,##0") đ</h4>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-warning">
+            <div class="card-header bg-warning text-dark fw-bold py-3 fs-5">⚙️ Cập nhật Trạng thái</div>
+            <div class="card-body p-4">
+                <form asp-action="UpdateStatus" method="post">
+                    <input type="hidden" name="orderId" value="@Model.OrderId" />
+
+                    @if (Model.Status == 3)
+                    {
+                        <div class="alert alert-danger text-center fw-bold mb-4">
+                            Đơn hàng này đã bị hủy!
+                        </div>
+                        <select name="status" class="form-select form-select-lg mb-4 fw-bold text-danger" disabled>
+                            <option value="3">❌ Đã hủy</option>
+                        </select>
+
+                        <button type="button" class="btn btn-secondary btn-lg w-100 fw-bold shadow-sm" disabled>
+                            🚫 KHÔNG THỂ THAY ĐỔI
+                        </button>
+                    }
+                    else if (Model.Status == 2)
+                    {
+                        <div class="alert alert-success text-center fw-bold mb-4">
+                            Đơn hàng đã giao thành công!
+                        </div>
+                        <select name="status" class="form-select form-select-lg mb-4 fw-bold text-success" disabled>
+                            <option value="2">✅ Hoàn thành</option>
+                        </select>
+
+                        <button type="button" class="btn btn-secondary btn-lg w-100 fw-bold shadow-sm" disabled>
+                            🚫 ĐÃ KẾT THÚC QUY TRÌNH
+                        </button>
+                    }
+                    else
+                    {
+                        <select name="status" class="form-select form-select-lg mb-4 fw-bold" asp-for="Status">
+
+                            @if (Model.Status == 0)
+                            {
+                                <option value="0">⏳ Chờ duyệt (Đơn mới)</option>
+                                <option value="1">🚚 Đang giao hàng</option>
+                                <option value="2">✅ Hoàn thành (Khách đã nhận)</option>
+                                <option value="3">❌ Hủy đơn hàng</option>
+                            }
+                            else if (Model.Status == 1)
+                            {
+                                <option value="1">🚚 Đang giao hàng</option>
+                                <option value="2">✅ Hoàn thành (Khách đã nhận)</option>
+                            }
+
+                        </select>
+
+                        <button type="submit" class="btn btn-success btn-lg w-100 fw-bold shadow-sm">
+                            💾 LƯU TRẠNG THÁI
+                        </button>
+                    }
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-info text-dark fw-bold">Sản phẩm đã mua</div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Tên sản phẩm</th>
+                            <th class="text-center">Số lượng</th>
+                            <th class="text-end">Đơn giá</th>
+                            <th class="text-end">Thành tiền</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var detail in Model.OrderDetails)
+                        {
+                            var thanhTien = detail.Quantity * detail.Price;
+                            <tr>
+                                <td>
+                                    @if (detail.Product != null && !string.IsNullOrEmpty(detail.Product.ThumbnailUrl))
+                                    {
+                                        <img src="@detail.Product.ThumbnailUrl" style="width:40px; height:40px; object-fit:cover" class="me-2 rounded" />
+                                    }
+                                    @detail.Product?.ProductName
+                                </td>
+                                <td class="text-center">x @detail.Quantity</td>
+                                <td class="text-end">@detail.Price.ToString("#,##0") đ</td>
+                                <td class="text-end fw-bold text-danger">@thanhTien.ToString("#,##0") đ</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <a asp-action="Index" class="btn btn-secondary mt-3">⬅ Quay lại danh sách</a>
+    </div>
+</div>

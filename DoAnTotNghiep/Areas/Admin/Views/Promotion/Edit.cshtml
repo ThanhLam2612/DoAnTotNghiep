@@ -1,0 +1,107 @@
+﻿@model DoAnTotNghiep.Models.Promotion
+
+@{
+    ViewData["Title"] = "Sửa Chiến dịch Khuyến mãi";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+    var products = ViewBag.Products as List<DoAnTotNghiep.Models.Product>;
+    var selectedProducts = ViewBag.SelectedProducts as List<int> ?? new List<int>();
+}
+
+<div class="container-fluid px-4 mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-primary m-0">✏️ Cập Nhật Chiến Dịch</h2>
+        <a asp-action="Index" class="btn btn-outline-secondary fw-bold shadow-sm rounded-pill px-4">⬅ Quay lại</a>
+    </div>
+
+    <form asp-action="Edit" method="post">
+        <input type="hidden" asp-for="PromotionId" />
+        <div asp-validation-summary="ModelOnly" class="text-danger fw-bold mb-3"></div>
+
+        <div class="row g-4">
+            <div class="col-md-5">
+                <div class="card shadow-sm border-0 rounded-4 h-100">
+                    <div class="card-header bg-white border-bottom-0 pt-4 pb-0 px-4">
+                        <h5 class="fw-bold text-primary"><i class="bi bi-info-circle"></i> Cài đặt chung</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="mb-3">
+                            <label asp-for="PromotionName" class="form-label fw-bold">Tên chương trình <span class="text-danger">*</span></label>
+                            <input asp-for="PromotionName" class="form-control border-primary" />
+                            <span asp-validation-for="PromotionName" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="DiscountPercent" class="form-label fw-bold text-danger">Mức giảm giá (%) <span class="text-danger">*</span></label>
+                            <input asp-for="DiscountPercent" class="form-control fw-bold text-danger fs-5" type="number" min="1" max="100" />
+                            <span asp-validation-for="DiscountPercent" class="text-danger small"></span>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <label asp-for="StartDate" class="form-label fw-bold">Bắt đầu từ</label>
+                                <input asp-for="StartDate" class="form-control" type="date" />
+                            </div>
+                            <div class="col-6 mb-3">
+                                <label asp-for="EndDate" class="form-label fw-bold">Kết thúc lúc</label>
+                                <input asp-for="EndDate" class="form-control" type="date" />
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Description" class="form-label fw-bold">Mô tả thêm</label>
+                            <textarea asp-for="Description" class="form-control" rows="2"></textarea>
+                        </div>
+
+                        <div class="form-check form-switch mt-4">
+                            <input class="form-check-input fs-5" type="checkbox" asp-for="IsActive" id="flexSwitchCheckChecked">
+                            <label class="form-check-label fw-bold ms-2 pt-1" for="flexSwitchCheckChecked">Đang kích hoạt (Cho phép chạy)</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-7">
+                <div class="card shadow-sm border-0 rounded-4 h-100 border-start border-primary border-4">
+                    <div class="card-header bg-white border-bottom-0 pt-4 pb-0 px-4">
+                        <h5 class="fw-bold text-primary"><i class="bi bi-box-seam"></i> Sản phẩm áp dụng</h5>
+                        <small class="text-muted">Bỏ tick để loại bỏ sản phẩm khỏi chiến dịch này.</small>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="border rounded p-3 bg-light" style="max-height: 420px; overflow-y: auto;">
+                            @if (products != null && products.Any())
+                            {
+                                <div class="row g-2">
+                                    @foreach (var p in products)
+                                    {
+                                        var isChecked = selectedProducts.Contains(p.ProductId) ? "checked" : "";
+
+                                        <div class="col-md-6">
+                                            <div class="form-check bg-white p-2 border rounded shadow-sm">
+                                                <input class="form-check-input ms-1 me-2" type="checkbox" name="selectedProducts" value="@p.ProductId" id="prod_@p.ProductId" @isChecked>
+                                                <label class="form-check-label text-dark fw-bold" for="prod_@p.ProductId" style="cursor: pointer; font-size: 0.9rem;">
+                                                    @p.ProductName <br />
+                                                    <small class="text-danger">@p.BasePrice.ToString("#,##0") đ</small>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white border-top-0 p-4 text-end">
+                        <button type="submit" class="btn btn-primary btn-lg fw-bold px-5 shadow">
+                            💾 LƯU CẬP NHẬT
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

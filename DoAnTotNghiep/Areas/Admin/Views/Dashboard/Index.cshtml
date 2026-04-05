@@ -1,0 +1,189 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}
+@model IEnumerable<DoAnTotNghiep.Models.Order>
+@{
+    ViewData["Title"] = "Bảng điều khiển Quản trị";
+}
+
+<div class="container-fluid mt-4 mb-5">
+    <h2 class="fw-bold mb-4">📊 THỐNG KÊ SỐ LIỆU</h2>
+
+    <div class="row g-4 mb-5">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white shadow border-0 h-100 rounded-3">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold text-uppercase mb-2">💰 TỔNG DOANH THU</h6>
+                    <h3 class="fw-bold mb-0">@ViewBag.TotalRevenue.ToString("#,##0") đ</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white shadow border-0 h-100 rounded-3">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold text-uppercase mb-2">📦 TỔNG ĐƠN HÀNG</h6>
+                    <h3 class="fw-bold mb-0">@ViewBag.TotalOrders <span class="fs-6 fw-normal">đơn</span></h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark shadow border-0 h-100 rounded-3">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold text-uppercase mb-2">🛍️ SẢN PHẨM</h6>
+                    <h3 class="fw-bold mb-0">@ViewBag.TotalProducts <span class="fs-6 fw-normal">mặt hàng</span></h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white shadow border-0 h-100 rounded-3">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold text-uppercase mb-2">👥 KHÁCH HÀNG</h6>
+                    <h3 class="fw-bold mb-0">@ViewBag.TotalCustomers <span class="fs-6 fw-normal">thành viên</span></h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+
+        <div class="col-lg-7">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white fw-bold py-3 fs-5">
+                    📈 Biểu đồ doanh thu 
+                </div>
+                <div class="card-body">
+                    <canvas id="revenueChart" style="min-height: 350px;"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white fw-bold py-3 fs-5 d-flex justify-content-between align-items-center">
+                    <span>🔥 Top 5 Sản phẩm bán chạy</span>
+                    <a asp-controller="Product" asp-action="Index" class="btn btn-sm btn-outline-danger">Xem kho hàng</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3">Sản phẩm</th>
+                                    <th class="text-center">Đã bán</th>
+                                    <th class="text-end pe-3">Doanh thu</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (ViewBag.TopSellingProducts != null)
+                                {
+                                    var topProducts = ViewBag.TopSellingProducts as IEnumerable<dynamic>;
+                                    if (topProducts != null && topProducts.Any())
+                                    {
+                                        int rank = 1;
+                                        foreach (var item in topProducts)
+                                        {
+                                            <tr>
+                                                <td class="ps-3 d-flex align-items-center gap-2">
+                                                    @if (rank == 1)
+                                                    {
+                                                        <span class="badge bg-warning text-dark fs-6" title="Top 1">🥇</span>
+                                                    }
+                                                    else if (rank == 2)
+                                                    {
+
+                                                        <span class="badge bg-secondary fs-6" title="Top 2">🥈</span>
+                                                    }
+                                                    else if (rank == 3)
+                                                    {
+
+                                                        <span class="badge bg-danger fs-6" title="Top 3">🥉</span>
+                                                    }
+                                                    else
+                                                    {
+
+                                                        <span class="badge bg-light text-dark border ms-1" style="width: 25px;">@rank</span>
+                                                    }
+
+                                                    <img src="@item.ImageUrl" class="rounded border" style="width: 40px; height: 40px; object-fit: contain; background: white;" />
+                                                    <div class="fw-bold text-dark" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; max-width: 150px; font-size: 0.9rem;">
+                                                        @item.ProductName
+                                                    </div>
+                                                </td>
+
+                                                <td class="text-center">
+                                                    <span class="badge bg-success shadow-sm fs-6">@item.TotalSold</span>
+                                                </td>
+
+                                                <td class="text-end pe-3 fw-bold text-danger">
+                                                    @item.TotalRevenue.ToString("#,##0") đ
+                                                </td>
+                                            </tr>
+                                            rank++;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <tr><td colspan="3" class="text-center text-muted py-5">Chưa có dữ liệu bán hàng.</td></tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr><td colspan="3" class="text-center text-muted py-5">Chưa có dữ liệu bán hàng.</td></tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        var revenueDataStr = '@ViewBag.RevenueData';
+        var revenueArray = revenueDataStr.split(',').map(Number); 
+
+        var ctx = document.getElementById('revenueChart').getContext('2d');
+        var revenueChart = new Chart(ctx, {
+            type: 'bar', 
+            data: {
+                labels: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'],
+                datasets: [{
+                    label: 'Doanh thu (VNĐ)',
+                    data: revenueArray,
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1,
+                    borderRadius: 5 
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return value.toLocaleString('vi-VN') + ' đ'; 
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.parsed.y.toLocaleString('vi-VN') + ' đ'; 
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+}

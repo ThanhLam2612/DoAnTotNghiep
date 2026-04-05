@@ -1,0 +1,59 @@
+﻿
+@model DoAnTotNghiep.Models.Product
+
+@{
+    ViewData["Title"] = "Thêm Sản phẩm";
+}
+
+<div class="container mt-4">
+    <h2>Thêm sản phẩm mới</h2>
+
+    <div class="row">
+        <div class="col-md-8">
+            <form asp-area="Admin" asp-controller="Product" asp-action="Create"
+                  method="post" enctype="multipart/form-data">
+                
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                <div class="form-group mb-3">
+                    <label class="control-label fw-bold">Tên sản phẩm</label>
+                    <input asp-for="ProductName" class="form-control" placeholder="VD: iPhone 15 Pro Max" />
+                    <span asp-validation-for="ProductName" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label class="control-label fw-bold">Giá bán (VNĐ)</label>
+                    <input asp-for="BasePrice" class="form-control" type="number" />
+                    <span asp-validation-for="BasePrice" class="text-danger"></span>
+                </div>
+                <div class="form-group mb-3">
+                    <label class="control-label fw-bold">Danh mục</label>
+                    <select asp-for="CategoryId" class="form-control" asp-items="ViewBag.CategoryId">
+                        <option value="">-- Chọn danh mục --</option>
+                    </select>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label class="control-label fw-bold">Thương hiệu</label>
+                    <select asp-for="BrandId" class="form-control" asp-items="ViewBag.BrandId">
+                        <option value="">-- Chọn thương hiệu --</option>
+                    </select>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label class="control-label fw-bold">Ảnh sản phẩm</label>
+                    <input type="file" name="imageFile" class="form-control" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label class="control-label fw-bold">Mô tả</label>
+                    <textarea asp-for="Description" class="form-control" rows="4"></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Lưu sản phẩm</button>
+                <a asp-action="Index" class="btn btn-secondary">Hủy</a>
+                
+            </form>
+        </div>
+    </div>
+</div>

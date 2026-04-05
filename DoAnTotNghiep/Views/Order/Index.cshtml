@@ -1,0 +1,65 @@
+﻿@model IEnumerable<DoAnTotNghiep.Models.Order>
+@{
+    ViewData["Title"] = "Đơn hàng của tôi";
+}
+<div class="container mt-4 mb-5">
+    <h2 class="fw-bold mb-4">📦 ĐƠN HÀNG CỦA TÔI</h2>
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info text-center p-5 fw-bold shadow-sm">
+            Bạn chưa có đơn hàng nào. <a asp-controller="Product" asp-action="Index" class="text-danger">Mua sắm ngay!</a>
+        </div>
+    }
+    else
+    {
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-0">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="text-center">Mã Đơn</th>
+                            <th>Ngày đặt</th>
+                            <th class="text-end">Tổng tiền</th>
+                            <th class="text-center">Trạng thái</th>
+                            <th class="text-center">Chi tiết</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="text-center fw-bold text-danger">#@item.OrderId</td>
+                                <td>@item.OrderDate.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td class="text-end fw-bold text-danger">@item.TotalAmount.ToString("#,##0") đ</td>
+                                <td class="text-center">
+                                    @if (item.Status == 0)
+                                    {
+                                        <span class="badge bg-warning text-dark fs-6">⏳ Chờ duyệt</span>
+                                    }
+                                    else if (item.Status == 1)
+                                    {
+
+                                        <span class="badge bg-info text-dark fs-6">🚚 Đang giao</span>
+                                    }
+                                    else if (item.Status == 2)
+                                    {
+
+                                        <span class="badge bg-success fs-6">✅ Hoàn thành</span>
+                                    }
+                                    else
+                                    {
+
+                                        <span class="badge bg-danger fs-6">❌ Đã hủy</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    <a asp-action="Details" asp-route-id="@item.OrderId" class="btn btn-outline-primary btn-sm fw-bold">Xem</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>

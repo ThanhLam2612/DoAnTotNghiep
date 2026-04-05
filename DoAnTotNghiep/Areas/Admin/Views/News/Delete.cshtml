@@ -1,0 +1,46 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}
+@model DoAnTotNghiep.Models.News
+
+@{
+    ViewData["Title"] = "Xác nhận xóa Bài viết";
+}
+
+<div class="card shadow-sm mt-4 border-danger">
+    <div class="card-header bg-danger text-white">
+        <h4 class="mb-0">CẢNH BÁO: BẠN ĐANG XÓA BÀI VIẾT</h4>
+    </div>
+    <div class="card-body">
+        <h5 class="card-title text-danger">Hành động này không thể hoàn tác. File ảnh cũng sẽ bị xóa khỏi máy chủ!</h5>
+        <hr />
+        <div class="row">
+            <div class="col-md-4 text-center">
+                @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                {
+                    <img src="@Model.ImageUrl" class="img-thumbnail" style="max-width: 100%;" />
+                }
+            </div>
+            <div class="col-md-8">
+                <dl class="row">
+                    <dt class="col-sm-3">Tiêu đề:</dt>
+                    <dd class="col-sm-9 fw-bold fs-5 text-primary">@Model.Title</dd>
+
+                    <dt class="col-sm-3">Mô tả ngắn:</dt>
+                    <dd class="col-sm-9">@Model.ShortDescription</dd>
+
+                    <dt class="col-sm-3">Ngày đăng:</dt>
+                    <dd class="col-sm-9 text-muted">@Model.CreatedDate.ToString("dd/MM/yyyy HH:mm")</dd>
+                </dl>
+
+                <form asp-action="Delete" method="post">
+                    <input type="hidden" asp-for="NewsId" />
+                    <button type="submit" class="btn btn-danger mt-3">✅ Chắc chắn Xóa</button>
+                    <a asp-action="Index" class="btn btn-secondary mt-3 ms-2">Hủy bỏ</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

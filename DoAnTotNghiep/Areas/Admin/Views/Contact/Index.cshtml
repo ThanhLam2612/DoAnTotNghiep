@@ -1,0 +1,174 @@
+﻿@model IEnumerable<DoAnTotNghiep.Models.Contact>
+
+@{
+    ViewData["Title"] = "Quản lý Liên hệ";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid px-4 mt-4 mb-5">
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show fw-bold shadow-sm mb-4">
+            ✔️ @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-primary m-0">💌 QUẢN LÝ TIN NHẮN KHÁCH HÀNG</h2>
+    </div>
+
+    <div class="card shadow-sm border-0 rounded-4 mb-4 bg-light">
+        <div class="card-body p-3">
+            <form asp-action="Index" method="get">
+                @{
+                    int? currentStatus = ViewBag.Status as int?;
+                }
+                <div class="row g-2 align-items-end">
+
+                    <div class="col-md-5">
+                        <label class="form-label fw-bold text-muted small text-uppercase mb-1">🔍 Tìm kiếm</label>
+                        <input type="text" name="searchString" class="form-control border-secondary" value="@ViewBag.SearchString" placeholder="Nhập tên, SĐT, Email hoặc nội dung...">
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold text-muted small text-uppercase mb-1">Trạng thái xử lý</label>
+                        <select name="status" class="form-select border-secondary">
+                            <option value="">-- Tất cả tin nhắn --</option>
+                            <option value="0" selected="@(currentStatus == 0)">🔴 Chưa xử lý</option>
+                            <option value="1" selected="@(currentStatus == 1)">🟢 Đã xử lý</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary fw-bold flex-grow-1 shadow-sm">Lọc</button>
+
+                        @if (!string.IsNullOrEmpty(ViewBag.SearchString) || currentStatus != null)
+                        {
+                            <a asp-action="Index" class="btn btn-outline-danger fw-bold px-3 shadow-sm" title="Xóa bộ lọc">❌</a>
+                        }
+                    </div>
+
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow border-0 rounded-4">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" style="table-layout: fixed; word-wrap: break-word;">
+                    <thead class="bg-dark text-white">
+                        <tr>
+                            <th class="py-3 px-4" style="width: 25%;">Người gửi</th>
+                            <th class="py-3" style="width: 35%;">Nội dung tin nhắn</th>
+                            <th class="py-3 text-center" style="width: 15%;">Ngày gửi</th>
+                            <th class="py-3 text-center" style="width: 15%;">Trạng thái</th>
+                            <th class="py-3 text-center" style="width: 10%;">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            foreach (var item in Model)
+                            {
+                                <tr class="@(item.Status == 0 ? "table-warning" : "")">
+                                    <td class="px-4">
+                                        <span class="d-block fw-bold text-primary fs-6">@item.FullName</span>
+                                        <span class="d-block small text-muted"><i class="bi bi-telephone-fill text-danger"></i> @item.Phone</span>
+                                        <span class="d-block small text-muted"><i class="bi bi-envelope-fill text-secondary"></i> @item.Email</span>
+                                    </td>
+
+                                    <td class="@(item.Status == 0 ? "fw-bold text-dark" : "text-dark")">
+                                        <div style="max-height: 60px; overflow: hidden; text-overflow: ellipsis;">
+                                            @item.Message
+                                        </div>
+                                    </td>
+
+                                    <td class="text-center fw-bold text-muted small">
+                                        @item.CreatedDate.ToString("dd/MM/yyyy HH:mm")
+                                    </td>
+
+                                    <td class="text-center">
+                                        @if (item.Status == 1)
+                                        {
+                                            <span class="badge bg-success shadow-sm px-3 py-2">Đã xử lý</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger shadow-sm px-3 py-2">Chưa xử lý</span>
+                                        }
+                                    </td>
+
+                                    <td class="text-center">
+                                        <div class="btn-group shadow-sm">
+                                            @if (item.Status == 0)
+                                            {
+                                                <a asp-action="MarkAsRead" asp-route-id="@item.ContactId" class="btn btn-sm btn-success" title="Đánh dấu đã xử lý">✔️</a>
+                                            }
+                                            <a asp-action="Delete" asp-route-id="@item.ContactId" class="btn btn-sm btn-outline-danger"
+                                               onclick="return confirm('Xóa tin nhắn của [@item.FullName]?');" title="Xóa">🗑️</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center py-5 text-muted fw-bold fs-5">
+                                    📭 Hòm thư hiện tại đang trống!
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (ViewBag.TotalPages > 1)
+{
+    int? filterStatus = ViewBag.Status as int?;
+
+    <nav aria-label="Page navigation" class="mt-4 mb-5">
+        <ul class="pagination justify-content-center shadow-sm">
+
+            <li class="page-item @(ViewBag.CurrentPage == 1 ? "disabled" : "")">
+                <a class="page-link fw-bold" asp-action="Index"
+                   asp-route-page="@(ViewBag.CurrentPage - 1)"
+                   asp-route-searchString="@ViewBag.SearchString"
+                   asp-route-status="@filterStatus">❮ Trước</a>
+            </li>
+
+            @for (int i = 1; i <= ViewBag.TotalPages; i++)
+            {
+                <li class="page-item @(i == ViewBag.CurrentPage ? "active" : "")">
+                    <a class="page-link fw-bold" asp-action="Index"
+                       asp-route-page="@i"
+                       asp-route-searchString="@ViewBag.SearchString"
+                       asp-route-status="@filterStatus">@i</a>
+                </li>
+            }
+
+            <li class="page-item @(ViewBag.CurrentPage == ViewBag.TotalPages ? "disabled" : "")">
+                <a class="page-link fw-bold" asp-action="Index"
+                   asp-route-page="@(ViewBag.CurrentPage + 1)"
+                   asp-route-searchString="@ViewBag.SearchString"
+                   asp-route-status="@filterStatus">Sau ❯</a>
+            </li>
+
+        </ul>
+    </nav>
+}
+
+<style>
+    .table-hover tbody tr:hover {
+        background-color: #f8f9fa;
+        transition: background-color 0.2s ease-in-out;
+    }
+
+    .table-warning:hover {
+        background-color: #ffe69c !important;
+    }
+</style>

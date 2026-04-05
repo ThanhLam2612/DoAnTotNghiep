@@ -1,0 +1,150 @@
+﻿@model IEnumerable<DoAnTotNghiep.Models.Order>
+@{
+    ViewData["Title"] = "Quản lý Đơn hàng";
+}
+
+<div class="card shadow-sm mt-4">
+    <div class="card-header bg-primary text-white">
+        <h4 class="mb-0">Danh sách Đơn hàng</h4>
+    </div>
+    <div class="card shadow-sm border-0 rounded-4 mb-4 bg-light">
+        <div class="card-body p-4">
+            <form asp-action="Index" method="get">
+                <div class="row g-3 align-items-end">
+
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold text-muted small uppercase">🔍 Tìm kiếm</label>
+                        <input type="text" name="searchString" class="form-control border-secondary" value="@ViewBag.SearchString" placeholder="Mã đơn, Tên, SĐT...">
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold text-muted small uppercase">📌 Trạng thái</label>
+                        <select name="status" class="form-select border-secondary">
+                            <option value="">-- Tất cả --</option>
+                            <option value="0" selected="@(ViewBag.Status == 0 ? "selected" : null)">Chờ duyệt</option>
+                            <option value="1" selected="@(ViewBag.Status == 1 ? "selected" : null)">Đang giao</option>
+                            <option value="2" selected="@(ViewBag.Status == 2 ? "selected" : null)">Hoàn thành</option>
+                            <option value="3" selected="@(ViewBag.Status == 3 ? "selected" : null)">Đã hủy</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold text-muted small uppercase">📅 Từ ngày</label>
+                        <input type="date" name="fromDate" class="form-control border-secondary" value="@ViewBag.FromDate">
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold text-muted small uppercase">📅 Đến ngày</label>
+                        <input type="date" name="toDate" class="form-control border-secondary" value="@ViewBag.ToDate">
+                    </div>
+
+                    <div class="col-md-3 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary fw-bold shadow-sm flex-grow-1">
+                            Lọc kết quả
+                        </button>
+                        <a asp-action="Index" class="btn btn-outline-secondary fw-bold shadow-sm" title="Xóa bộ lọc">
+                            ❌ Xóa
+                        </a>
+                    </div>
+
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="card-body">
+        <table class="table table-bordered table-striped">
+            <thead class="table-dark">
+                <tr>
+                    <th>Mã Đơn</th>
+                    <th>Khách hàng</th>
+                    <th>Ngày đặt</th>
+                    <th>Tổng tiền</th>
+                    <th>Trạng thái</th>
+                    <th>Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td class="fw-bold">#@item.OrderId</td>
+                        <td>
+                            <strong>@item.CustomerName</strong><br />
+                            <small class="text-muted">📞 @item.Phone</small>
+                        </td>
+                        <td>@item.OrderDate.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td class="text-danger fw-bold">@item.TotalAmount.ToString("#,##0") đ</td>
+                        <td>
+                            @if (item.Status == 0)
+                            {
+                                <span class="badge bg-warning text-dark">⏳ Chờ duyệt</span>
+                            }
+                            else if (item.Status == 1)
+                            {
+
+                                <span class="badge bg-info">🚚 Đang giao</span>
+                            }
+                            else if (item.Status == 2)
+                            {
+
+                                <span class="badge bg-success">✅ Đã giao</span>
+                            }
+                            else
+                            {
+
+                                <span class="badge bg-danger">❌ Đã hủy</span>
+                            }
+                        </td>
+                        <td>
+                            <a asp-action="Details" asp-route-id="@item.OrderId" class="btn btn-primary btn-sm">👁️ Xem chi tiết</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+@if (ViewBag.TotalPages > 1)
+{
+    <nav aria-label="Page navigation" class="mt-4 mb-5">
+        <ul class="pagination justify-content-center shadow-sm">
+
+            <li class="page-item @(ViewBag.CurrentPage == 1 ? "disabled" : "")">
+                <a class="page-link fw-bold" asp-action="Index"
+                   asp-route-page="@(ViewBag.CurrentPage - 1)"
+                   asp-route-searchString="@ViewBag.SearchString"
+                   asp-route-status="@ViewBag.Status"
+                   asp-route-fromDate="@ViewBag.FromDate"
+                   asp-route-toDate="@ViewBag.ToDate">
+                    ❮ Trước
+                </a>
+            </li>
+
+            @for (int i = 1; i <= ViewBag.TotalPages; i++)
+            {
+                <li class="page-item @(i == ViewBag.CurrentPage ? "active" : "")">
+                    <a class="page-link fw-bold" asp-action="Index"
+                       asp-route-page="@i"
+                       asp-route-searchString="@ViewBag.SearchString"
+                       asp-route-status="@ViewBag.Status"
+                       asp-route-fromDate="@ViewBag.FromDate"
+                       asp-route-toDate="@ViewBag.ToDate">
+                        @i
+                    </a>
+                </li>
+            }
+
+            <li class="page-item @(ViewBag.CurrentPage == ViewBag.TotalPages ? "disabled" : "")">
+                <a class="page-link fw-bold" asp-action="Index"
+                   asp-route-page="@(ViewBag.CurrentPage + 1)"
+                   asp-route-searchString="@ViewBag.SearchString"
+                   asp-route-status="@ViewBag.Status"
+                   asp-route-fromDate="@ViewBag.FromDate"
+                   asp-route-toDate="@ViewBag.ToDate">
+                    Sau ❯
+                </a>
+            </li>
+
+        </ul>
+    </nav>
+}
