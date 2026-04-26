@@ -1,0 +1,42 @@
+﻿@model DoAnTotNghiep.Models.News
+@{
+    ViewData["Title"] = Model.Title;
+}
+<div class="container mt-4 mb-5">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+            <li class="breadcrumb-item"><a asp-action="Index">Tin tức</a></li>
+            <li class="breadcrumb-item active" aria-current="page">@Model.Title</li>
+        </ol>
+    </nav>
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-sm border-0 p-4 p-md-5">
+                <h1 class="fw-bold mb-3 text-primary">@Model.Title</h1>
+                <div class="text-muted mb-4 fs-6">
+                    <span>Đăng ngày: @Model.CreatedDate.ToString("dd/MM/yyyy HH:mm")</span>
+                </div>
+                @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                {
+                    <img src="@Model.ImageUrl" alt="@Model.Title" class="img-fluid rounded mb-5 w-100" style="max-height: 500px; object-fit: cover;" />
+                }
+                <div class="post-content lh-lg" style="font-size: 1.15rem; text-align: justify;">
+                    @Html.Raw(Model.Content)
+                </div>
+                <hr class="my-5" />
+                <div class="text-center">
+                    <a asp-action="Index" class="btn btn-secondary fw-bold px-4 py-2">Trở về danh sách tin tức</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+    .post-content img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        margin: 15px 0;
+    }
+</style>

@@ -1,0 +1,165 @@
+﻿@model IEnumerable<DoAnTotNghiep.Models.ProductVariant>
+@{
+    var product = ViewBag.Product as DoAnTotNghiep.Models.Product;
+    ViewData["Title"] = "Cấu hình chi tiết - " + product.ProductName;
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid mb-5 mt-4">
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-exclamation-triangle me-1"></i> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-check-circle me-1"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+        <h3 class="m-0 fw-bold text-dark">
+            Cấu hình: <span class="text-primary">@product.ProductName</span>
+        </h3>
+        <div class="d-flex gap-2">
+            <a asp-controller="Product" asp-action="Index" class="btn btn-secondary shadow-sm d-flex align-items-center fw-bold rounded-pill px-4 text-nowrap">
+                <i class="fas fa-arrow-left me-2"></i> Quay lại SP gốc
+            </a>
+            <a asp-action="Create" asp-route-productId="@product.ProductId" class="btn btn-outline-primary shadow-sm d-flex align-items-center fw-bold rounded-pill px-4 text-nowrap">
+                <i class="fas fa-plus me-2"></i> Thêm biến thể mới
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" style="font-size: 0.95rem;">
+                    <thead class="table-light">
+                        <tr class="text-muted text-uppercase small fw-bold">
+                            <th class="border-0 px-4 text-center" width="100">Hình ảnh</th>
+                            <th class="border-0" width="250">Thông số cấu hình</th>
+                            <th class="border-0 text-end" width="150">Giá bán</th>
+                            <th class="border-0 text-center" width="120">Tồn kho</th>
+                            <th class="border-0" width="200">Tạo bởi</th>
+                            <th class="border-0" width="200">Cập nhật cuối</th>
+                            <th class="border-0 text-center" width="120">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                                <td colspan="7" class="text-center py-5 text-muted fw-bold">
+                                    <i class="fas fa-box-open fa-3x mb-3 opacity-25 d-block"></i>
+                                    Chưa có cấu hình nào. Hãy bấm "Thêm biến thể mới".
+                                </td>
+                            </tr>
+                        }
+
+                        @foreach (var item in Model)
+                        {
+                            <tr class="border-bottom">
+                                <td class="px-4 py-3 text-center">
+                                    @if (!string.IsNullOrEmpty(item.ImageUrl))
+                                    {
+                                        <img src="@item.ImageUrl" class="rounded shadow-sm border" style="width: 60px; height: 60px; object-fit: contain; background-color: #fff;" />
+                                    }
+                                    else
+                                    {
+                                        <div class="bg-light rounded border d-flex align-items-center justify-content-center mx-auto" style="width: 60px; height: 60px;">
+                                            <i class="fas fa-image text-muted opacity-50 fs-4"></i>
+                                        </div>
+                                    }
+                                </td>
+
+                                <td>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        @foreach (var attr in item.AttributeValues)
+                                        {
+                                            var preDef = attr.PredefinedAttributeValue;
+                                            <span class="badge rounded-pill fw-normal text-dark border bg-light" style="font-size: 0.85rem; padding: 0.4em 0.7em;">
+                                                <span class="text-muted me-1">@preDef.ProductAttribute.AttributeName:</span>
+                                                <span class="fw-bold text-primary">@preDef.Value</span>
+                                            </span>
+                                        }
+                                    </div>
+                                </td>
+
+                                <td class="text-danger fw-bold text-end fs-6">
+                                    @item.Price.ToString("#,##0") đ
+                                </td>
+
+                                <td class="text-center">
+                                    @if (item.StockQuantity > 0)
+                                    {
+                                        <span class="badge bg-success fs-6 rounded-pill px-3 shadow-sm">@item.StockQuantity</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger fs-6 rounded-pill px-3 shadow-sm">Hết hàng</span>
+                                    }
+                                </td>
+
+                                <td>
+                                    <div class="small">
+                                        <div class="text-dark fw-bold mb-1">
+                                            <i class="fas fa-user-plus me-1 text-muted"></i>
+                                            @(string.IsNullOrEmpty(item.CreatedBy) ? "Hệ thống" : item.CreatedBy)
+                                        </div>
+                                        <div class="text-muted" style="font-size: 0.8rem;">
+                                            <i class="fas fa-clock me-1"></i> @item.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div class="small">
+                                        @if (item.UpdatedAt.HasValue)
+                                        {
+                                            <div class="text-dark fw-bold mb-1">
+                                                <i class="fas fa-user-edit me-1 text-muted"></i>
+                                                @(string.IsNullOrEmpty(item.UpdatedBy) ? "Hệ thống" : item.UpdatedBy)
+                                            </div>
+                                            <div class="text-muted" style="font-size: 0.8rem;">
+                                                <i class="fas fa-clock me-1"></i> @item.UpdatedAt.Value.ToString("dd/MM/yyyy HH:mm")
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="fst-italic text-muted opacity-50">- Chưa cập nhật -</span>
+                                        }
+                                    </div>
+                                </td>
+
+                                <td class="text-center align-middle">
+                                    <div class="d-flex justify-content-center gap-2">
+                                        <a asp-action="Edit" asp-route-id="@item.VariantId" class="btn btn-sm btn-outline-primary px-2 shadow-sm" title="Chỉnh sửa">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <form asp-action="Delete" asp-route-id="@item.VariantId" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn xóa biến thể này?');">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger px-2 shadow-sm" title="Xóa">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .table-hover tbody tr:hover {
+        background-color: #f8fbff;
+        transition: background-color 0.2s ease-in-out;
+    }
+</style>

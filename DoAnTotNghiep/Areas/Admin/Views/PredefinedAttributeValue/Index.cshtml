@@ -1,0 +1,146 @@
+﻿@model IEnumerable<DoAnTotNghiep.Models.PredefinedAttributeValue>
+@{
+    var productAttr = ViewBag.Attribute as DoAnTotNghiep.Models.ProductAttribute;
+    ViewData["Title"] = "Quản lý giá trị: " + productAttr.AttributeName;
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+
+    // Tự động nhận diện nếu thuộc tính là Màu sắc để hiện bảng chọn màu
+    bool isColor = productAttr.AttributeName.ToLower().Contains("màu") || productAttr.AttributeName.ToLower().Contains("color");
+}
+
+<div class="container-fluid mb-5">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Giá trị của tùy chọn: <span class="text-primary fw-bold">@productAttr.AttributeName</span></h1>
+        <a asp-controller="ProductAttribute" asp-action="Index" class="btn btn-sm btn-secondary shadow-sm">
+            <i class="fas fa-arrow-left fa-sm text-white-50"></i> Quay lại danh sách tùy chọn
+        </a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-check-circle me-1"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-exclamation-triangle me-1"></i> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="card shadow mb-4 border-left-primary">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Thêm giá trị mới</h6>
+                </div>
+                <div class="card-body bg-light">
+                    <form asp-action="Create" method="post">
+                        <input type="hidden" name="AttributeId" value="@productAttr.AttributeId" />
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Tên giá trị <span class="text-danger">*</span></label>
+                            <input type="text" name="Value" class="form-control shadow-sm" placeholder="VD: 128GB, CORE 5-210H, Đỏ..." required />
+                        </div>
+
+                        @if (isColor)
+                        {
+                            <div class="mb-3 border-top pt-3 mt-3">
+                                <label class="form-label fw-bold">Chọn màu sắc hiển thị</label>
+                                <div class="d-flex align-items-center bg-white p-2 rounded border">
+                                    <input type="color" name="ColorHex" class="form-control form-control-color shadow-sm" style="width: 60px; height: 40px; cursor:pointer;" value="#000000" title="Bấm vào để chọn màu" />
+                                    <span class="ms-3 text-muted small fst-italic">Mã màu này sẽ được in ra thành hình tròn ở ngoài giao diện khách hàng.</span>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            // Nếu không phải là màu sắc thì tự động gán mã màu rỗng
+                            <input type="hidden" name="ColorHex" value="" />
+                        }
+
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary w-100 fw-bold shadow-sm">
+                                <i class="fas fa-plus me-1"></i> XÁC NHẬN THÊM
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 bg-white d-flex align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-dark">Danh sách giá trị trong từ điển</h6>
+                    <span class="badge bg-info text-dark">Tổng: @Model.Count()</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-center" style="width: 10%;">STT</th>
+                                    <th>Giá trị</th>
+                                    @if (isColor)
+                                    {
+                                        <th class="text-center">Mã màu hiển thị</th>
+                                    }
+                                    <th class="text-center" style="width: 20%;">Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @{
+                                    int i = 1;
+                                }
+                                @foreach (var item in Model)
+                                {
+                                    <tr>
+                                        <td class="text-center text-muted">@(i++)</td>
+                                        <td class="fw-bold text-primary fs-6">@item.Value</td>
+                                        @if (isColor)
+                                        {
+                                            <td class="text-center">
+                                                @if (!string.IsNullOrEmpty(item.ColorHex))
+                                                {
+                                                    <div class="d-inline-flex align-items-center justify-content-center px-3 py-1 border rounded-pill bg-white shadow-sm">
+                                                        <span class="rounded-circle border border-secondary" style="background-color: @item.ColorHex; width: 18px; height: 18px; display: inline-block;"></span>
+                                                        <code class="ms-2 text-dark">@item.ColorHex</code>
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted fst-italic">Trống</span>
+                                                }
+                                            </td>
+                                        }
+                                        <td class="text-center">
+                                            <form asp-action="Delete" asp-route-id="@item.PredefinedValueId" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn xóa giá trị [@item.Value] khỏi từ điển? Hành động này không thể hoàn tác!');">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger shadow-sm fw-bold">
+                                                    <i class="fas fa-trash-alt me-1"></i> Xóa
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                }
+                                @if (!Model.Any())
+                                {
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted py-5">
+                                            <i class="fas fa-box-open fs-2 mb-3 opacity-50"></i>
+                                            <p class="mb-0">Từ điển này chưa có giá trị nào.</p>
+                                            <p class="small">Hãy thêm giá trị mới ở biểu mẫu bên trái.</p>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

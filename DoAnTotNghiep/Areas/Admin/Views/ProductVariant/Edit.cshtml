@@ -1,0 +1,223 @@
+﻿@model DoAnTotNghiep.Models.ProductVariant
+@{
+    var product = ViewBag.Product as DoAnTotNghiep.Models.Product;
+    var attributes = ViewBag.Attributes as List<DoAnTotNghiep.Models.ProductAttribute>;
+    ViewData["Title"] = "Chỉnh sửa biến thể";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+<div class="container-fluid mb-5 mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-header bg-white py-3 px-4 border-bottom d-flex justify-content-between align-items-center gap-3">
+                    <h4 class="text-primary fw-bold m-0">Chỉnh Sửa Biến Thể: <span class="text-dark">@product.ProductName</span></h4>
+                    <a asp-action="Index" asp-route-productId="@product.ProductId" class="btn btn-outline-secondary fw-bold rounded-pill px-4 shadow-sm text-nowrap">
+                        <i class="fas fa-arrow-left me-2"></i> Quay lại
+                    </a>
+                </div>
+
+                <div class="card-body p-4 p-md-5 bg-light">
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger shadow-sm py-2 fw-bold">
+                            <i class="fas fa-exclamation-circle me-1"></i> @TempData["ErrorMessage"]
+                        </div>
+                    }
+
+                    <form asp-action="Edit" method="post" enctype="multipart/form-data">
+                        <input type="hidden" name="id" value="@Model.VariantId" />
+                        <div id="deletedImagesContainer"></div>
+                        <input type="hidden" name="imageOrder" id="imageOrder" value="" />
+
+                        <div class="row g-5">
+                            <div class="col-md-5">
+                                <div class="bg-white p-4 rounded-4 shadow-sm border h-100">
+                                    <h6 class="fw-bold text-dark border-bottom pb-2 mb-4"><i class="fas fa-box me-2 text-primary"></i>Thông tin cơ bản</h6>
+
+                                    <div class="mb-4">
+                                        <label class="form-label fw-bold text-dark small">Giá bán (VNĐ) <span class="text-danger">*</span></label>
+                                        <div class="input-group shadow-sm">
+                                            <input type="number" name="price" class="form-control fw-bold text-danger" value="@Math.Round(Model.Price, 0)" required min="0" />
+                                            <span class="input-group-text bg-light fw-bold">đ</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <label class="form-label fw-bold text-dark small">Số lượng kho <span class="text-danger">*</span></label>
+                                        <input type="number" name="stockQuantity" class="form-control shadow-sm" value="@Model.StockQuantity" required min="0" />
+                                    </div>
+
+                                    <h6 class="fw-bold text-dark border-bottom pb-2 mb-4 mt-5"><i class="fas fa-images me-2 text-primary"></i>Hình ảnh hiển thị</h6>
+
+                                    <div class="mb-4">
+                                        <label class="form-label fw-bold text-dark small">Ảnh đại diện (Tải lên để thay thế):</label>
+                                        @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                                        {
+                                            <div class="mb-3">
+                                                <img src="@Model.ImageUrl" class="rounded border shadow-sm p-1" style="width: 80px; height: 80px; object-fit: contain; background-color: #fff;" />
+                                            </div>
+                                        }
+                                        <input type="file" name="imageFile" class="form-control shadow-sm" accept="image/*" />
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold text-info small">Thư viện ảnh Gallery (Kéo thả để sắp xếp vị trí):</label>
+
+                                        @if (Model.ProductImages != null && Model.ProductImages.Any())
+                                        {
+                                            <div class="d-flex flex-wrap gap-2 mb-3 p-3 bg-light border rounded shadow-inner" id="sortable-gallery">
+                                                @foreach (var img in Model.ProductImages)
+                                                {
+                                                    <div class="position-relative gallery-item" id="gallery_@img.ImageId" data-id="@img.ImageId" style="cursor: grab;" title="Kéo thả để đổi vị trí">
+                                                        <img src="@img.ImageUrl" class="rounded border shadow-sm bg-white p-1" style="width: 70px; height: 70px; object-fit: contain; -webkit-user-drag: none;" />
+                                                        <button type="button" class="btn btn-sm btn-danger position-absolute top-0 start-100 translate-middle rounded-circle shadow" style="padding: 0.15rem 0.35rem; font-size: 0.7rem;" onclick="removeGalleryImage(@img.ImageId)">
+                                                            <i class="fas fa-times"></i>
+                                                        </button>
+                                                    </div>
+                                                }
+                                            </div>
+                                        }
+                                        <span class="text-muted small d-block mb-2"><i class="fas fa-upload me-1"></i>Tải thêm ảnh mới vào Gallery:</span>
+                                        <input type="file" name="galleryFiles" class="form-control border-info bg-light shadow-sm" accept="image/*" multiple />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-7">
+                                <div class="bg-white p-4 rounded-4 shadow-sm border h-100">
+                                    <h6 class="fw-bold text-primary border-bottom pb-2 mb-4"><i class="fas fa-list-ul me-2"></i>Chỉnh sửa thông số kỹ thuật</h6>
+
+                                    <div class="alert alert-info small py-2 shadow-sm border-0 mb-4">
+                                        <i class="fas fa-info-circle me-1"></i> Click vào ô và <b>gõ chữ</b> để tìm kiếm thông số nhanh hơn.
+                                    </div>
+
+                                    @if (attributes != null && attributes.Any())
+                                    {
+                                        <div class="row g-3">
+                                            @foreach (var attr in attributes)
+                                            {
+                                                var currentAssignedVal = Model.AttributeValues.FirstOrDefault(a => a.PredefinedAttributeValue.AttributeId == attr.AttributeId);
+                                                int? selectedValId = currentAssignedVal?.PredefinedValueId;
+
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="form-label fw-bold text-dark small mb-1">@attr.AttributeName:</label>
+                                                    <select name="attribute_@attr.AttributeId" id="attr_@attr.AttributeId" class="form-select select2-searchable shadow-sm"
+                                                            data-attr-id="@attr.AttributeId" data-attr-name="@attr.AttributeName">
+                                                        <option value="">-- Bỏ qua --</option>
+                                                        @if (attr.PredefinedValues != null)
+                                                        {
+                                                            foreach (var val in attr.PredefinedValues)
+                                                            {
+                                                                if (selectedValId.HasValue && selectedValId.Value == val.PredefinedValueId)
+                                                                {
+                                                                    <option value="@val.PredefinedValueId" selected>@val.Value</option>
+                                                                }
+                                                                else
+                                                                {
+                                                                    <option value="@val.PredefinedValueId">@val.Value</option>
+                                                                }
+                                                            }
+                                                        }
+                                                    </select>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="text-center text-muted fst-italic py-5 border rounded bg-light">
+                                            <i class="fas fa-tags fa-2x mb-2 opacity-50"></i><br />
+                                            Sản phẩm này chưa được thiết lập danh sách thuộc tính nào.
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-3 mt-5 border-top pt-4">
+                            <a asp-action="Index" asp-route-productId="@product.ProductId" class="btn btn-light border fw-bold rounded-pill px-5 py-2 shadow-sm text-nowrap">
+                                Hủy bỏ
+                            </a>
+                            <button type="submit" class="btn btn-warning text-dark fw-bold rounded-pill px-5 py-2 shadow-sm text-nowrap">
+                                <i class="fas fa-save me-2"></i> Lưu cập nhật
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Chỉnh style cho Select2 để nó khớp với Bootstrap 5 */
+    .select2-container .select2-selection--single {
+        height: 38px;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        padding: 4px 0;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 36px;
+    }
+
+    .select2-container--default .select2-results__option--highlighted.select2-results__option--selectable {
+        background-color: #0d6efd;
+    }
+
+    .shadow-inner {
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+    }
+</style>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            // 1. Kích hoạt Combobox tìm kiếm (Select2)
+            $('.select2-searchable').select2({
+                placeholder: "-- Chọn hoặc gõ tìm kiếm --",
+                width: '100%',
+                language: {
+                    noResults: function() {
+                        return "Không tìm thấy thông số này";
+                    }
+                }
+            });
+
+            // 2. Khởi tạo tính năng kéo thả Gallery
+            var galleryEl = document.getElementById('sortable-gallery');
+            if (galleryEl) {
+                var sortable = Sortable.create(galleryEl, {
+                    animation: 150,
+                    ghostClass: 'opacity-50',
+                    cursor: 'grabbing'
+                });
+            }
+
+            // 3. Bắt sự kiện form submit để lưu thứ tự ảnh mới nhất
+            $('form').on('submit', function () {
+                let order = [];
+                $('#sortable-gallery .gallery-item:visible').each(function () {
+                    order.push($(this).data('id'));
+                });
+                $('#imageOrder').val(order.join(','));
+            });
+        });
+
+        // 4. Đánh dấu xóa ảnh Gallery
+        function removeGalleryImage(imageId) {
+            if (confirm('Bạn muốn xóa ảnh này khỏi Gallery? (Sẽ xóa vĩnh viễn khi bấm Lưu)')) {
+                $(`#gallery_${imageId}`).hide();
+                $('#deletedImagesContainer').append(`<input type="hidden" name="deletedImageIds" value="${imageId}" />`);
+            }
+        }
+    </script>
+}

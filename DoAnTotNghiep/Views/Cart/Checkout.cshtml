@@ -1,0 +1,172 @@
+﻿@model List<DoAnTotNghiep.Models.CartItem>
+@{
+    ViewData["Title"] = "Thanh toán đơn hàng";
+}
+<div class="container mt-4 mb-5">
+    <h2 class="fw-bold mb-4 text-uppercase">Thanh toán đơn hàng</h2>
+    <div class="row">
+        <div class="col-md-7 mb-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white fw-bold py-3 fs-5">
+                    Thông tin người nhận
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="Checkout" method="post">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger fw-bold shadow-sm"></div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Họ và tên khách hàng <span class="text-danger">*</span></label>
+                            <input type="text" name="CustomerName" class="form-control form-control-lg" required placeholder="Nhập họ tên đầy đủ..." value="@ViewBag.FullName" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Số điện thoại <span class="text-danger">*</span></label>
+                            <input type="tel" name="Phone" class="form-control form-control-lg" required placeholder="Nhập số điện thoại liên hệ..." value="@ViewBag.Phone" />
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Địa chỉ giao hàng chi tiết <span class="text-danger">*</span></label>
+                            <textarea name="Address" class="form-control form-control-lg" rows="3" required placeholder="Nhập số nhà, tên đường, phường/xã, quận/huyện..."></textarea>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold mb-3">Phương thức thanh toán <span class="text-danger">*</span></label>
+
+                            <label class="payment-method-card d-block border rounded-3 p-3 mb-3 cursor-pointer shadow-sm position-relative" style="cursor: pointer;">
+                                <div class="form-check d-flex align-items-center mb-0">
+                                    <input class="form-check-input fs-4 me-3 mt-0" type="radio" name="paymentMethod" value="COD" checked onchange="changePaymentBtnText('COD')">
+                                    <div>
+                                        <div class="fw-bold fs-6 text-dark"><i class="fas fa-truck text-primary me-2"></i>Thanh toán khi nhận hàng (COD)</div>
+                                        <small class="text-muted">Bạn sẽ thanh toán bằng tiền mặt khi shipper giao hàng tới.</small>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <label class="payment-method-card d-block border rounded-3 p-3 mb-3 cursor-pointer shadow-sm position-relative" style="cursor: pointer;">
+                                <div class="form-check d-flex align-items-center mb-0">
+                                    <input class="form-check-input fs-4 me-3 mt-0" type="radio" name="paymentMethod" value="VNPAY" onchange="changePaymentBtnText('VNPAY')">
+                                    <div>
+                                        <div class="fw-bold fs-6 text-dark d-flex align-items-center">
+                                            <img src="https://vnpay.vn/s1/statics.vnpay.vn/2023/9/06ncktiwd6dc1694418196384.png" alt="VNPAY" style="height: 24px; margin-right: 8px;" />
+                                            Thanh toán trực tuyến qua VNPAY
+                                        </div>
+                                        <small class="text-muted">Quét mã QR qua ứng dụng ngân hàng hoặc thẻ ATM/Visa.</small>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+
+                        <div class="d-grid mt-4">
+                            <button type="submit" id="btnSubmitOrder" class="btn btn-danger btn-lg fw-bold py-3 shadow">
+                                XÁC NHẬN ĐẶT HÀNG
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-5">
+            <div class="card shadow-sm border-0 bg-light position-sticky" style="top: 20px;">
+                <div class="card-header bg-dark text-white fw-bold py-3 fs-5">
+                    Tóm tắt đơn hàng
+                </div>
+                <div class="card-body p-4">
+                    @foreach (var item in Model)
+                    {
+                        <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                            <div class="d-flex align-items-center">
+                                <img src="@item.ThumbnailUrl" style="width: 50px; height: 50px; object-fit: contain;" class="me-3 border bg-white rounded p-1" />
+                                <div>
+                                    <h6 class="mb-0 fw-bold">@item.ProductName</h6>
+
+                                    @if (!string.IsNullOrEmpty(item.VariantName))
+                                    {
+                                        <div class="mt-1 text-muted" style="font-size: 0.85rem;">
+                                            @{
+                                                var attrs = item.VariantName.Split('|', StringSplitOptions.RemoveEmptyEntries);
+                                                for (int i = 0; i < attrs.Length; i++)
+                                                {
+                                                    var a = attrs[i];
+                                                    var parts = a.Split(':', 2);
+                                                    if (parts.Length == 2)
+                                                    {
+                                                        string attrName = parts[0].Trim();
+                                                        string attrVal = parts[1].Trim();
+                                                        bool isColor = attrName.ToLower().Contains("màu") || attrName.ToLower().Contains("color");
+
+                                                        <span class="d-inline-flex align-items-center">
+                                                            @if (isColor && attrVal.StartsWith("#"))
+                                                            {
+                                                                @attrName
+                                                                <span>:</span>
+
+                                                                <span class="rounded-circle border border-secondary mx-1 shadow-sm" style="width: 12px; height: 12px; background-color: @attrVal; display: inline-block;"></span>
+                                                            }
+                                                            else
+                                                            {
+                                                                <span>@attrName: @attrVal</span>
+                                                            }
+                                                        </span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span>@a.Trim()</span>
+                                                    }
+
+                                                    if (i < attrs.Length - 1)
+                                                    {
+                                                        <span class="mx-1">|</span>
+                                                    }
+                                                }
+                                            }
+                                        </div>
+                                    }
+
+                                    <small class="text-muted d-block">SL: @item.Quantity</small>
+                                </div>
+                            </div>
+                            <span class="text-danger fw-bold">@item.TotalAmount.ToString("#,##0") đ</span>
+                        </div>
+                    }
+                    <div class="d-flex justify-content-between mt-4">
+                        <h5 class="fw-bold">TỔNG CỘNG:</h5>
+                        <h4 class="text-danger fw-bold">@Model.Sum(x => x.TotalAmount).ToString("#,##0") đ</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Làm đẹp cho các khối chọn phương thức thanh toán */
+    .payment-method-card {
+        transition: all 0.2s ease-in-out;
+        border: 2px solid #e9ecef !important;
+    }
+
+        .payment-method-card:hover {
+            border-color: #0d6efd !important;
+            background-color: #f8fbff;
+        }
+        /* Đổi viền xanh khi Radio button được chọn */
+        .payment-method-card:has(input[type="radio"]:checked) {
+            border-color: #0d6efd !important;
+            background-color: #f0f7ff;
+        }
+</style>
+
+<script>
+    // Hàm đổi chữ trên nút Xác nhận tùy theo phương thức thanh toán
+    function changePaymentBtnText(method) {
+        var btn = document.getElementById("btnSubmitOrder");
+        if (method === 'VNPAY') {
+            btn.innerHTML = '<i class="fas fa-qrcode me-2"></i> CHUYỂN TỚI TRANG THANH TOÁN VNPAY';
+            btn.className = 'btn btn-primary btn-lg fw-bold py-3 shadow';
+        } else {
+            btn.innerHTML = 'XÁC NHẬN ĐẶT HÀNG (COD)';
+            btn.className = 'btn btn-danger btn-lg fw-bold py-3 shadow';
+        }
+    }
+</script>

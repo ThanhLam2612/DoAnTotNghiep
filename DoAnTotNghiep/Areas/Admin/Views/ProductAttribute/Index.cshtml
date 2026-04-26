@@ -1,0 +1,127 @@
+﻿@model IEnumerable<DoAnTotNghiep.Models.ProductAttribute>
+@{
+    ViewData["Title"] = "Quản lý tùy chọn Sản phẩm";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Quản lý Tùy chọn Sản phẩm</h1>
+        <a asp-action="Create" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
+            <i class="fas fa-plus fa-sm text-white-50"></i> Thêm tùy chọn mới
+        </a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card shadow mb-4 border-left-primary">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between bg-white">
+            <form asp-action="Index" method="get" class="d-inline-block form-inline mr-auto ml-md-3 my-2 my-md-0 mw-100 navbar-search">
+                <div class="input-group">
+                    <input type="text" name="searchString" value="@ViewData["CurrentFilter"]" class="form-control bg-light border-0 small" placeholder="Tìm tên hoặc danh mục..." aria-label="Search" aria-describedby="basic-addon2">
+                    <div class="input-group-append">
+                        <button class="btn btn-primary" type="submit">
+                            <i class="fas fa-search fa-sm"></i>
+                        </button>
+                        @if (!string.IsNullOrEmpty(ViewData["CurrentFilter"]?.ToString()))
+                        {
+                            <a asp-action="Index" class="btn btn-secondary" title="Xóa bộ lọc"><i class="fas fa-times"></i></a>
+                        }
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover align-middle" width="100%" cellspacing="0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Tên tùy chọn</th>
+                            <th>Danh mục áp dụng</th>
+                            <th width="25%" class="text-center">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td class="fw-bold text-primary">@item.AttributeName</td>
+                                    <td>
+                                        @if (item.CategoryId.HasValue && item.Category != null)
+                                        {
+                                            <span class="badge bg-info text-dark shadow-sm">@item.Category.CategoryName</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary shadow-sm">Dùng chung (Tất cả)</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <a asp-controller="PredefinedAttributeValue" asp-action="Index" asp-route-attributeId="@item.AttributeId" class="btn btn-sm btn-info text-white shadow-sm me-2" title="Quản lý giá trị (128GB, Đỏ...)">
+                                            <i class="fas fa-list-ul"></i> Xem giá trị
+                                        </a>
+                                        <a asp-action="Edit" asp-route-id="@item.AttributeId" class="btn btn-sm btn-warning text-dark shadow-sm me-2" title="Sửa tên Tùy chọn">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <form asp-action="Delete" asp-route-id="@item.AttributeId" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa tùy chọn này không?');">
+                                            <button type="submit" class="btn btn-sm btn-danger shadow-sm" title="Xóa Tùy chọn">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="3" class="text-center text-muted py-5">
+                                    <i class="fas fa-box-open fa-3x mb-3 opacity-50"></i>
+                                    <p>Không tìm thấy thuộc tính nào.</p>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (ViewBag.TotalPages > 1)
+            {
+                <nav aria-label="Page navigation" class="mt-4">
+                    <ul class="pagination justify-content-end mb-0">
+                        <li class="page-item @(ViewBag.CurrentPage == 1 ? "disabled" : "")">
+                            <a class="page-link" asp-action="Index" asp-route-pageNumber="@(ViewBag.CurrentPage - 1)" asp-route-searchString="@ViewData["CurrentFilter"]">Trang trước</a>
+                        </li>
+
+                        @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                        {
+                            <li class="page-item @(i == ViewBag.CurrentPage ? "active" : "")">
+                                <a class="page-link" asp-action="Index" asp-route-pageNumber="@i" asp-route-searchString="@ViewData["CurrentFilter"]">@i</a>
+                            </li>
+                        }
+
+                        <li class="page-item @(ViewBag.CurrentPage == ViewBag.TotalPages ? "disabled" : "")">
+                            <a class="page-link" asp-action="Index" asp-route-pageNumber="@(ViewBag.CurrentPage + 1)" asp-route-searchString="@ViewData["CurrentFilter"]">Trang sau</a>
+                        </li>
+                    </ul>
+                </nav>
+            }
+        </div>
+    </div>
+</div>

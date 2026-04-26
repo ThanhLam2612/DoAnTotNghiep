@@ -1,0 +1,109 @@
+﻿@model DoAnTotNghiep.Models.Slider
+
+@{
+    ViewData["Title"] = "Cập Nhật Slide";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid px-4 mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-primary m-0">Cập Nhật Slide</h2>
+        <a asp-action="Index" class="btn btn-outline-secondary fw-bold shadow-sm rounded-pill px-4">Quay lại danh sách</a>
+    </div>
+
+    <form asp-action="Edit" method="post" enctype="multipart/form-data">
+        <div asp-validation-summary="All" class="text-danger fw-bold mb-3"></div>
+
+        <input type="hidden" asp-for="SliderId" />
+        <input type="hidden" asp-for="ImageUrl" />
+        <input type="hidden" asp-for="DisplayOrder" />
+        <input type="hidden" asp-for="CreatedBy" />
+        <input type="hidden" asp-for="CreatedAt" />
+
+        <div class="row g-4">
+
+            <div class="col-md-6">
+                <div class="card shadow-sm border-0 rounded-4 h-100">
+                    <div class="card-header bg-white border-bottom-0 pt-4 pb-0 px-4">
+                        <h5 class="fw-bold text-primary"><i class="bi bi-fonts"></i> Nội dung hiển thị</h5>
+                    </div>
+                    <div class="card-body p-4">
+
+                        <div class="mb-3">
+                            <label asp-for="Title" class="form-label fw-bold">Tiêu đề chính</label>
+                            <input asp-for="Title" class="form-control" />
+                            <span asp-validation-for="Title" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Description" class="form-label fw-bold">Mô tả ngắn</label>
+                            <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                            <span asp-validation-for="Description" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3 mt-4 bg-light p-3 rounded border">
+                            <div class="form-check form-switch fs-5">
+                                <input class="form-check-input" type="checkbox" asp-for="IsActive" id="IsActiveSwitch">
+                                <label class="form-check-label fw-bold ms-2 mt-1 text-dark" for="IsActiveSwitch">Bật hiển thị</label>
+                            </div>
+                            <div class="small text-muted mt-2">
+                                <i class="fas fa-info-circle text-primary"></i> <i>Thứ tự của Slide được quản lý tự động. Bạn có thể hoán đổi vị trí của nó ở ngoài danh sách.</i>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card shadow-sm border-0 rounded-4 h-100 border-start border-primary border-4">
+                    <div class="card-header bg-white border-bottom-0 pt-4 pb-0 px-4">
+                        <h5 class="fw-bold text-primary"><i class="bi bi-image"></i> Hình ảnh Slide</h5>
+                        <small class="text-muted">Bỏ trống nếu muốn giữ nguyên ảnh cũ.</small>
+                    </div>
+                    <div class="card-body p-4 text-center">
+
+                        <div class="mb-4">
+                            <input type="file" name="imageUpload" id="imageUpload" class="form-control form-control-lg border-primary shadow-sm" accept="image/*" onchange="previewImage(event)" />
+                        </div>
+
+                        <div id="imagePreviewContainer" class="border rounded-3 p-2 bg-light shadow-inner">
+                            <p class="text-muted fw-bold mb-2 small"><i class="fas fa-eye"></i> Ảnh hiện tại (Hoặc ảnh mới sẽ thay thế):</p>
+                            <img id="imagePreview" src="@Model.ImageUrl" alt="Preview" class="img-fluid rounded shadow-sm border" style="max-height: 250px; object-fit: contain;" />
+                        </div>
+
+                    </div>
+                    <div class="card-footer bg-white border-top-0 p-4">
+                        <button type="submit" class="btn btn-primary btn-lg fw-bold w-100 shadow">
+                            <i class="fas fa-save me-2"></i> LƯU CẬP NHẬT SLIDE
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        function previewImage(event) {
+            var input = event.target;
+            var reader = new FileReader();
+
+            reader.onload = function(){
+                var dataURL = reader.result;
+                var output = document.getElementById('imagePreview');
+                output.src = dataURL; // Đổi ảnh cũ thành ảnh mới ngay lập tức
+            };
+
+            if(input.files && input.files[0]) {
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+    </script>
+}

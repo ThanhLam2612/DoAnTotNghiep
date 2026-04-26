@@ -1,0 +1,1140 @@
+﻿@model DoAnTotNghiep.Models.Product
+@using Microsoft.EntityFrameworkCore
+@inject DoAnTotNghiep.Models.AppDbContext _context
+@{
+    ViewData["Title"] = Model.ProductName;
+    var promoDict = ViewBag.PromoDict as Dictionary<int, int>;
+    var favoritedIds = ViewBag.FavoritedIds as List<int> ?? new List<int>();
+    
+    var approvedReviews = Model.Reviews != null ? Model.Reviews.Where(r => r.IsApproved).ToList() : new List<DoAnTotNghiep.Models.Review>();
+    int totalReviews = approvedReviews.Count;
+    double avgRating = totalReviews > 0 ? Math.Round(approvedReviews.Average(r => r.Rating), 1) : 0;
+
+    int count5 = approvedReviews.Count(r => r.Rating == 5);
+    int count4 = approvedReviews.Count(r => r.Rating == 4);
+    int count3 = approvedReviews.Count(r => r.Rating == 3);
+    int count2 = approvedReviews.Count(r => r.Rating == 2);
+    int count1 = approvedReviews.Count(r => r.Rating == 1);
+
+    int pct5 = totalReviews > 0 ? (int)Math.Round((double)count5 / totalReviews * 100) : 0;
+    int pct4 = totalReviews > 0 ? (int)Math.Round((double)count4 / totalReviews * 100) : 0;
+    int pct3 = totalReviews > 0 ? (int)Math.Round((double)count3 / totalReviews * 100) : 0;
+    int pct2 = totalReviews > 0 ? (int)Math.Round((double)count2 / totalReviews * 100) : 0;
+    int pct1 = totalReviews > 0 ? (int)Math.Round((double)count1 / totalReviews * 100) : 0;
+
+    bool hasVariants = Model.ProductVariants != null && Model.ProductVariants.Any();
+
+    var now = DateTime.Now;
+    var variantIds = hasVariants ? Model.ProductVariants.Select(v => v.VariantId).ToList() : new List<int>();
+    
+    var variantPromos = await _context.PromotionVariants
+        .Include(p => p.Promotion)
+        .Where(pv => variantIds.Contains(pv.VariantId) && pv.Promotion.IsActive == true && pv.Promotion.StartDate <= now && pv.Promotion.EndDate >= now)
+        .ToListAsync();
+
+    var variantGalleries = await _context.ProductImages
+        .Where(pi => pi.VariantId != null && variantIds.Contains(pi.VariantId.Value))
+        .ToListAsync();
+}
+
+<div class="container mt-4 mb-5">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none">Trang chủ</a></li>
+            <li class="breadcrumb-item"><a asp-action="Index" class="text-decoration-none">Sản phẩm</a></li>
+            <li class="breadcrumb-item active fw-bold" aria-current="page">@Model.ProductName</li>
+        </ol>
+    </nav>
+
+    <div class="row bg-white p-4 shadow-sm rounded border">
+        <div class="col-md-5 text-center mb-4 mb-md-0">
+            <img id="mainProductImage" src="@Model.ThumbnailUrl" alt="@Model.ProductName" class="img-fluid rounded shadow-sm" style="max-height: 450px; object-fit: contain; transition: opacity 0.15s ease-in-out;" />
+            
+            @{
+                var uniqueThumbnails = new List<string>();
+                var seenColors = new HashSet<int>();
+
+                if (Model.ProductVariants != null)
+                {
+                    foreach (var variant in Model.ProductVariants.Where(v => !string.IsNullOrEmpty(v.ImageUrl)))
+                    {
+                        var colorAttr = variant.AttributeValues?.FirstOrDefault(a => 
+                            a.PredefinedAttributeValue != null && a.PredefinedAttributeValue.ProductAttribute != null &&
+                            (a.PredefinedAttributeValue.ProductAttribute.AttributeName.ToLower().Contains("màu") || 
+                             a.PredefinedAttributeValue.ProductAttribute.AttributeName.ToLower().Contains("color")));
+
+                        if (colorAttr != null)
+                        {
+                            int colorId = colorAttr.PredefinedValueId;
+                            if (!seenColors.Contains(colorId))
+                            {
+                                seenColors.Add(colorId);
+                                uniqueThumbnails.Add(variant.ImageUrl);
+                            }
+                        }
+                        else
+                        {
+                            if (!uniqueThumbnails.Contains(variant.ImageUrl))
+                            {
+                                uniqueThumbnails.Add(variant.ImageUrl);
+                            }
+                        }
+                    }
+                }
+            }
+
+            <div class="d-flex justify-content-center gap-3 mt-3 overflow-auto pb-2" id="thumbnailGallery">
+                @if (uniqueThumbnails != null && uniqueThumbnails.Any())
+                {
+                    <img src="@Model.ThumbnailUrl" class="border rounded variant-thumb" style="width: 65px; height: 65px; object-fit: cover; cursor: pointer; border-width: 2px !important; border-color: #0d6efd !important;" onclick="changeMainImage(this, '@Model.ThumbnailUrl')" />
+                    @foreach (var imgUrl in uniqueThumbnails)
+                    {
+                        if (imgUrl != Model.ThumbnailUrl)
+                        {
+                            <img src="@imgUrl" class="border rounded variant-thumb opacity-50" style="width: 65px; height: 65px; object-fit: cover; cursor: pointer; border-width: 2px !important;" onclick="changeMainImage(this, '@imgUrl')" />
+                        }
+                    }
+                }
+            </div>
+        </div>
+        
+        <div class="col-md-7 ps-md-5">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <h2 class="fw-bold m-0 pe-3">@Model.ProductName</h2>
+                
+                @{ bool isMainProductFav = favoritedIds.Contains(Model.ProductId); }
+                <button type="button" class="btn btn-white rounded-circle shadow-sm border main-heart-btn flex-shrink-0 @(isMainProductFav ? "liked" : "")" 
+                        style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" 
+                        onclick="toggleFavorite(this, @Model.ProductId)" title="Thêm vào yêu thích">
+                    <i class="@(isMainProductFav ? "fas" : "far") fa-heart fs-4" style="line-height: 1; padding-top: 2px;"></i>
+                </button>
+            </div>
+
+            @if (totalReviews > 0)
+            {
+                <div class="mb-3 d-flex align-items-center">
+                    <span class="text-warning fs-5 me-2">
+                        @for (int i = 1; i <= 5; i++)
+                        {
+                            if (i <= Math.Round(avgRating))
+                            {
+                                <span>★</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted opacity-25">★</span>
+                            }
+                        }
+                    </span>
+                    <span class="text-muted fw-bold">(@avgRating) - @totalReviews đánh giá</span>
+                </div>
+            }
+
+            @{
+                var attributeGroups = Model.ProductVariants?
+                    .Where(v => v.StockQuantity > 0 && v.AttributeValues != null)
+                    .SelectMany(v => v.AttributeValues)
+                    .Where(a => a.PredefinedAttributeValue != null && a.PredefinedAttributeValue.ProductAttribute != null)
+                    .GroupBy(a => a.PredefinedAttributeValue.ProductAttribute.AttributeName)
+                    .ToList();
+            }
+
+            <div class="mb-4 mt-4" style="min-height: 48px;">
+                <div class="d-flex align-items-center gap-3">
+                    @if (!hasVariants)
+                    {
+                        <h2 class="text-secondary fw-bold m-0 display-6 fst-italic" id="displayPrice">Sắp về hàng</h2>
+                    }
+                    else
+                    {
+                        <h2 class="text-danger fw-bold m-0 display-6" id="displayPrice"></h2>
+                        <span class="text-muted text-decoration-line-through fs-5 d-none" id="originalPrice"></span>
+                        <span class="badge bg-danger fs-6 py-2 px-3 shadow-sm rounded-pill d-none" id="discountBadge"></span>
+                    }
+                </div>
+            </div>
+
+            @if (attributeGroups != null && attributeGroups.Any())
+            {
+                <div class="variant-selection-area mb-4">
+                    @foreach (var group in attributeGroups)
+                    {
+                        <div class="mb-3 attribute-group" data-attr-name="@group.Key">
+                            <h6 class="fw-bold text-dark mb-2">Chọn @group.Key:</h6>
+                            <div class="d-flex flex-wrap gap-2">
+                                @{
+                                    var uniquePredefs = group.Select(a => a.PredefinedAttributeValue)
+                                                             .GroupBy(p => p.PredefinedValueId)
+                                                             .Select(g => g.First())
+                                                             .ToList();
+                                }
+                                @foreach (var preDef in uniquePredefs)
+                                {
+                                    var matchingVariant = Model.ProductVariants?.FirstOrDefault(v => v.AttributeValues.Any(av => av.PredefinedValueId == preDef.PredefinedValueId));
+                                    int varId = matchingVariant != null ? matchingVariant.VariantId : 0;
+
+                                    <div class="attr-btn variant-option border rounded px-3 py-2 cursor-pointer bg-white shadow-sm d-flex align-items-center justify-content-center" 
+                                         data-variant-id="@varId"
+                                         onclick="selectAttribute(this, '@group.Key', '@preDef.Value')">
+                                        @{ bool isColorGrp = group.Key.ToLower().Contains("màu") || group.Key.ToLower().Contains("color"); }
+    
+                                        @if (isColorGrp && !string.IsNullOrEmpty(preDef.ColorHex))
+                                        {
+                                            <span class="rounded-circle border" style="width: 24px; height: 24px; background-color: @preDef.ColorHex;"></span>
+                                        }
+                                        else
+                                        {
+                                            @preDef.Value
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+
+            <p class="text-muted fw-bold mb-4" id="stockStatus">
+                @if (!hasVariants)
+                {
+                    <i class="bi bi-x-circle-fill text-danger me-1"></i> <span class="text-danger">Sản phẩm hiện chưa có cấu hình và giá bán</span>
+                }
+                else if (attributeGroups != null && attributeGroups.Any())
+                {
+                    <i class="bi bi-box-seam me-1"></i> <span>Vui lòng chọn phiên bản để xem tồn kho và giá chính xác</span>
+                }
+                else
+                {
+                    <i class="bi bi-check-circle-fill text-success me-1"></i> <span>Sẵn sàng giao hàng</span>
+                }
+            </p>
+
+            <form asp-controller="Cart" asp-action="AddToCart" method="post" id="addToCartForm">
+                <input type="hidden" name="productId" value="@Model.ProductId" />
+                <input type="hidden" name="variantId" id="selectedVariantId" value="" />
+
+                <div class="d-flex align-items-center mb-4">
+                    <label class="fw-bold me-3">Số lượng:</label>
+                    <div class="input-group" style="width: 130px;">
+                        <button class="btn btn-outline-secondary fw-bold" type="button" onclick="changeQty(-1)" @(!hasVariants ? "disabled" : "")>-</button>
+                        <input type="number" name="quantity" id="quantityInput" class="form-control text-center fw-bold" value="1" min="1" readonly />
+                        <button class="btn btn-outline-secondary fw-bold" type="button" onclick="changeQty(1)" @(!hasVariants ? "disabled" : "")>+</button>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-3 mt-4">
+                    @{
+                        bool disableBtn = !hasVariants || (attributeGroups != null && attributeGroups.Any());
+                    }
+                    <button type="button" class="btn btn-danger btn-lg fw-bold flex-grow-1 py-3 shadow-sm" id="btnAddToCart" @(disableBtn ? "disabled" : "")>
+                        <i class="fas fa-cart-plus me-2"></i>THÊM VÀO GIỎ HÀNG
+                    </button>
+                    <button type="button" class="btn btn-warning btn-lg fw-bold flex-grow-1 py-3 shadow-sm text-dark" id="btnBuyNow" @(disableBtn ? "disabled" : "")>
+                        MUA NGAY
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="row bg-white p-4 shadow-sm rounded border mt-4">
+        <h4 class="fw-bold mb-4 pb-2 border-bottom">Khách hàng đánh giá</h4>
+        <div class="col-md-4 text-center border-end">
+            <h1 class="display-1 fw-bold text-danger mb-0">@avgRating</h1>
+            <div class="text-warning fs-4 mb-2">
+                @for (int i = 1; i <= 5; i++)
+                {
+                    if (i <= Math.Round(avgRating))
+                    {
+                        <i class="fas fa-star"></i>
+                    }
+                    else
+                    {
+                        <i class="far fa-star text-secondary opacity-25"></i>
+                    }
+                }
+            </div>
+            <p class="text-muted fw-bold">@totalReviews đánh giá</p>
+        </div>
+        <div class="col-md-8 px-md-5">
+            <div class="d-flex align-items-center mb-2">
+                <span class="me-2 fw-bold">5 sao</span>
+                <div class="progress flex-grow-1" style="height: 8px;">
+                    <div class="progress-bar bg-warning" role="progressbar" style="width: @pct5%" aria-valuenow="@pct5" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <span class="ms-2 text-muted small" style="width: 30px;">@pct5%</span>
+            </div>
+            <div class="d-flex align-items-center mb-2">
+                <span class="me-2 fw-bold">4 sao</span>
+                <div class="progress flex-grow-1" style="height: 8px;">
+                    <div class="progress-bar bg-warning" role="progressbar" style="width: @pct4%" aria-valuenow="@pct4" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <span class="ms-2 text-muted small" style="width: 30px;">@pct4%</span>
+            </div>
+            <div class="d-flex align-items-center mb-2">
+                <span class="me-2 fw-bold">3 sao</span>
+                <div class="progress flex-grow-1" style="height: 8px;">
+                    <div class="progress-bar bg-warning" role="progressbar" style="width: @pct3%" aria-valuenow="@pct3" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <span class="ms-2 text-muted small" style="width: 30px;">@pct3%</span>
+            </div>
+            <div class="d-flex align-items-center mb-2">
+                <span class="me-2 fw-bold">2 sao</span>
+                <div class="progress flex-grow-1" style="height: 8px;">
+                    <div class="progress-bar bg-warning" role="progressbar" style="width: @pct2%" aria-valuenow="@pct2" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <span class="ms-2 text-muted small" style="width: 30px;">@pct2%</span>
+            </div>
+            <div class="d-flex align-items-center">
+                <span class="me-2 fw-bold">1 sao</span>
+                <div class="progress flex-grow-1" style="height: 8px;">
+                    <div class="progress-bar bg-warning" role="progressbar" style="width: @pct1%" aria-valuenow="@pct1" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <span class="ms-2 text-muted small" style="width: 30px;">@pct1%</span>
+            </div>
+        </div>
+
+        <div class="col-12 mt-5">
+            <h5 class="fw-bold mb-3">Gửi đánh giá của bạn</h5>
+            <form asp-controller="Product" asp-action="SubmitReview" method="post" id="reviewForm" class="bg-light p-4 rounded border">
+                <input type="hidden" name="productId" value="@Model.ProductId" />
+                <input type="hidden" name="variantId" id="reviewVariantId" value="" />
+
+                <div class="mb-3">
+                    <label class="fw-bold mb-2 d-block">Bạn cảm thấy sản phẩm này thế nào?</label>
+                    <div class="rating-input text-warning fs-3" style="cursor: pointer; display: inline-block;">
+                        <i class="far fa-star star-sel" data-val="1"></i>
+                        <i class="far fa-star star-sel" data-val="2"></i>
+                        <i class="far fa-star star-sel" data-val="3"></i>
+                        <i class="far fa-star star-sel" data-val="4"></i>
+                        <i class="far fa-star star-sel" data-val="5"></i>
+                    </div>
+                    <input type="hidden" name="rating" id="ratingValue" value="0" />
+                    <div id="ratingError" class="text-danger small fw-bold mt-1 d-none">
+                        <i class="bi bi-exclamation-circle-fill me-1"></i> Vui lòng chọn số sao để đánh giá sản phẩm!
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <textarea name="comment" class="form-control rounded-1" rows="3" placeholder="Xin mời chia sẻ một số cảm nhận về sản phẩm..." required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary fw-bold px-4">Gửi đánh giá</button>
+            </form>
+        </div>
+
+        <div class="col-12 mt-5">
+            <h5 class="fw-bold mb-4">Các đánh giá mới nhất</h5>
+            @if (approvedReviews.Any())
+            {
+                <div class="review-list">
+                    @foreach (var review in approvedReviews.OrderByDescending(r => r.CreatedDate).Take(5))
+                    {
+                        <div class="d-flex mb-4 pb-3 border-bottom">
+                            <div class="me-3">
+                                <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 45px; height: 45px; font-size: 1.2rem;">
+                                    @review.UserName?.Substring(0, 1).ToUpper()
+                                </div>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="fw-bold mb-1">
+                                    @review.UserName
+                                    @if (review.VariantId != null)
+                                    {
+                                        var attrValues = Model.ProductVariants?.FirstOrDefault(v => v.VariantId == review.VariantId)
+                                            ?.AttributeValues?.Select(a => a.PredefinedAttributeValue?.Value).ToList();
+                                        
+                                        var variantName = attrValues != null && attrValues.Any() ? string.Join(" - ", attrValues) : "";
+                                        
+                                        if (!string.IsNullOrEmpty(variantName))
+                                        {
+                                            <span class="badge bg-light text-secondary border fw-normal ms-2" style="font-size: 0.75rem;">Phân loại hàng: @variantName</span>
+                                        }
+                                    }
+                                </h6>
+
+                                <div class="text-warning small mb-2">
+                                    @for (int i = 1; i <= 5; i++)
+                                    {
+                                        <i class="fas fa-star @(i <= review.Rating ? "" : "text-muted opacity-25")"></i>
+                                    }
+                                </div>
+                                <p class="mb-1 text-dark">@review.Comment</p>
+                                
+                                <div class="d-flex align-items-center gap-3 mb-2">
+                                    <small class="text-muted">
+                                        @review.CreatedDate.ToString("dd/MM/yyyy HH:mm")
+                                        @if (review.IsEdited)
+                                        {
+                                            <span class="fst-italic ms-1 text-secondary">(Đã chỉnh sửa)</span>
+                                        }
+                                    </small>
+                                    
+                                    @{
+                                        int likeCount = review.ReviewLikes?.Count ?? 0;
+                                        bool isLikedByCurrentUser = false;
+                                        if (User.Identity.IsAuthenticated)
+                                        {
+                                            isLikedByCurrentUser = review.ReviewLikes?.Any(l => l.UserName == User.Identity.Name) ?? false;
+                                        }
+                                        string btnColorClass = isLikedByCurrentUser ? "text-primary" : "text-secondary";
+                                        string iconClass = isLikedByCurrentUser ? "fas" : "far";
+                                    }
+
+                                    <button type="button" class="btn btn-sm @btnColorClass p-0 fw-bold btn-like-review border-0 bg-transparent" style="font-size: 0.85rem;" onclick="toggleReviewLike(this, @review.ReviewId)">
+                                        <i class="@iconClass fa-thumbs-up me-1"></i> Hữu ích (<span id="like-count-@review.ReviewId">@likeCount</span>)
+                                    </button>
+
+                                    @if (User.Identity.IsAuthenticated && User.Identity.Name == review.UserName)
+                                    {
+                                        <button type="button" class="btn btn-sm text-primary p-0 fw-bold border-0 bg-transparent" 
+                                                style="font-size: 0.85rem;" 
+                                                data-comment="@review.Comment"
+                                                onclick="openEditReviewModal(@review.ReviewId, @review.Rating, this.getAttribute('data-comment'))">
+                                            <i class="fas fa-edit me-1"></i> Sửa
+                                        </button>
+                                    }
+                                </div>
+
+                                @if (!string.IsNullOrEmpty(review.AdminReply))
+                                {
+                                    <div class="mt-2 p-3 bg-light rounded-3 position-relative" style="border-left: 4px solid #dc3545; margin-left: 1rem;">
+                                        <div class="position-absolute" style="top: -10px; left: 15px; width: 0; height: 0; border-left: 10px solid transparent; border-right: 10px solid transparent; border-bottom: 10px solid #f8f9fa;"></div>
+                                        <div class="fw-bold mb-1 text-danger">
+                                            <i class="fas fa-headset me-1"></i> Quản trị viên
+                                        </div>
+                                        <div class="text-dark" style="font-size: 0.95rem;">
+                                            @review.AdminReply
+                                        </div>
+                                        <small class="text-muted d-block mt-2" style="font-size: 0.8rem;">
+                                            @review.RepliedAt?.ToString("dd/MM/yyyy HH:mm")
+                                        </small>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <p class="text-muted fst-italic">Chưa có đánh giá nào cho sản phẩm này.</p>
+            }
+        </div>
+    </div>
+
+    @if (ViewBag.RelatedProducts != null)
+    {
+        var relatedList = ViewBag.RelatedProducts as List<DoAnTotNghiep.Models.Product>;
+        if (relatedList != null && relatedList.Count > 0)
+        {
+            <div class="mt-5 pt-3 mb-5">
+                <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                    <h3 class="fw-bold text-uppercase text-primary m-0">Sản phẩm tương tự</h3>
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-primary top-slider-btn shadow-sm" onclick="scrollCarousel('relatedProductsCarousel', -1)">❮</button>
+                            <button class="btn btn-outline-primary top-slider-btn shadow-sm" onclick="scrollCarousel('relatedProductsCarousel', 1)">❯</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="product-carousel" id="relatedProductsCarousel">
+                        @foreach (var item in relatedList)
+                        {
+                            int? defaultVarId = null;
+                            decimal baseP = 0;
+                            if (item.ProductVariants != null && item.ProductVariants.Any())
+                            {
+                                var defaultVariant = item.ProductVariants.OrderBy(v => v.Price).FirstOrDefault();
+                                if (defaultVariant != null)
+                                {
+                                    defaultVarId = defaultVariant.VariantId;
+                                    baseP = defaultVariant.Price;
+                                }
+                            }
+                            
+                            bool isSale = promoDict != null && promoDict.ContainsKey(item.ProductId) && baseP > 0;
+                            int discount = isSale ? promoDict[item.ProductId] : 0;
+                            decimal saleP = baseP - (baseP * discount / 100m); 
+                            bool hasManyPrices = item.ProductVariants != null && item.ProductVariants.Select(v => v.Price).Distinct().Count() > 1;
+                            string prefix = hasManyPrices ? "Giá từ: " : "";
+
+                            <div class="carousel-item-card px-2">
+                                <div class="card h-100 shadow-sm border-0 product-card transition-hover position-relative rounded-4">
+                                    @if (isSale)
+                                    {
+                                        <div class="position-absolute top-0 end-0 bg-danger text-white fw-bold px-2 py-1 m-2 rounded-circle shadow" style="z-index: 2;">
+                                            -@discount%
+                                        </div>
+                                    }
+                                    <a asp-action="Details" asp-route-id="@item.ProductId" asp-route-variantId="@defaultVarId">
+                                        <img src="@item.ThumbnailUrl" class="card-img-top p-3" alt="@item.ProductName" style="height: 200px; object-fit: contain;">
+                                    </a>
+                                    <div class="card-body d-flex flex-column text-center bg-light rounded-bottom-4">
+                                        <h6 class="card-title fw-bold mb-3" style="height: 40px; overflow: hidden;">
+                                            <a asp-action="Details" asp-route-id="@item.ProductId" asp-route-variantId="@defaultVarId" class="text-decoration-none text-dark">@item.ProductName</a>
+                                        </h6>
+                                        <div class="mb-3 mt-auto">
+                                            @if (baseP > 0)
+                                            {
+                                                @if (isSale)
+                                                {
+                                                    <span class="text-muted text-decoration-line-through me-2" style="font-size: 0.85rem;">@baseP.ToString("#,##0") đ</span>
+                                                    <span class="text-danger fw-bold fs-5">@prefix @saleP.ToString("#,##0") đ</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-danger fw-bold fs-5">@prefix @baseP.ToString("#,##0") đ</span>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <span class="text-secondary fw-bold fs-6 fst-italic px-3 py-1 bg-white rounded-pill border">Sắp về hàng</span>
+                                            }
+                                        </div>
+                                        
+                                        @{
+                                            var relApprovedReviews = item.Reviews?.Where(r => r.IsApproved).ToList() ?? new List<DoAnTotNghiep.Models.Review>();
+                                            double relAvgRating = relApprovedReviews.Any() ? Math.Round(relApprovedReviews.Average(r => r.Rating), 1) : 0;
+                                            int relTotalReviews = relApprovedReviews.Count;
+                                            bool relIsFav = favoritedIds.Contains(item.ProductId);
+                                        }
+                                        <div class="d-flex justify-content-between align-items-center pt-3 mt-2 border-top border-secondary-subtle">
+                                            <div class="d-flex align-items-center">
+                                                <div class="text-warning fw-bold me-1" style="font-size: 0.95rem;" title="@relAvgRating sao (@relTotalReviews đánh giá)">
+                                                    @relAvgRating.ToString("0.0") <i class="fas fa-star"></i>
+                                                </div>
+                                                <span class="text-muted fw-bold" style="font-size: 0.85rem;">(@relTotalReviews)</span>
+                                            </div>
+                                            <a href="javascript:void(0);" onclick="toggleFavorite(this, @item.ProductId)" class="heart-btn text-decoration-none @(relIsFav ? "liked" : "text-secondary")">
+                                                <i class="@(relIsFav ? "fas" : "far") fa-heart fs-5"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<div class="modal fade" id="loginRequireFavModal" tabindex="-1" aria-labelledby="loginRequireFavModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-warning text-dark rounded-top-4 border-0">
+                <h5 class="modal-title fw-bold" id="loginRequireFavModalLabel">
+                    <i class="fas fa-lock me-2"></i>Yêu cầu đăng nhập
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <div class="text-warning mb-3">
+                    <i class="fas fa-user-circle" style="font-size: 3rem;"></i>
+                </div>
+                <p class="fs-5 mb-0 fw-bold text-dark">Vui lòng đăng nhập!</p>
+                <p class="text-muted small mt-2">Bạn cần đăng nhập để sử dụng tính năng này.</p>
+            </div>
+            <div class="modal-footer border-0 p-4 pt-0 justify-content-center gap-2">
+                <button type="button" class="btn btn-light fw-bold px-4 rounded-pill" data-bs-dismiss="modal">Hủy bỏ</button>
+                <a asp-area="" asp-controller="Account" asp-action="Login" class="btn btn-primary fw-bold px-4 rounded-pill shadow-sm">
+                    Đăng nhập
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1055">
+    <div id="favoriteToast" class="toast align-items-center text-white border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body fw-bold fs-6" id="favoriteToastMessage">
+            </div>
+            <button type="button" id="toastCloseBtn" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editReviewModal" tabindex="-1" aria-labelledby="editReviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-primary text-white rounded-top-4">
+                <h5 class="modal-title fw-bold"><i class="fas fa-edit me-2"></i>Sửa Đánh Giá Của Bạn</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-controller="Product" asp-action="EditReview" method="post">
+                <div class="modal-body p-4">
+                    <input type="hidden" name="reviewId" id="editReviewId" />
+                    <div class="mb-3 text-center">
+                        <label class="fw-bold mb-2 d-block">Đánh giá sao:</label>
+                        <div class="edit-rating-input text-warning fs-2" style="cursor: pointer; display: inline-block;">
+                            <i class="far fa-star edit-star-sel" data-val="1"></i>
+                            <i class="far fa-star edit-star-sel" data-val="2"></i>
+                            <i class="far fa-star edit-star-sel" data-val="3"></i>
+                            <i class="far fa-star edit-star-sel" data-val="4"></i>
+                            <i class="far fa-star edit-star-sel" data-val="5"></i>
+                        </div>
+                        <input type="hidden" name="rating" id="editRatingValue" value="5" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="fw-bold mb-2">Nội dung đánh giá mới:</label>
+                        <textarea class="form-control bg-light rounded-3" id="editComment" name="comment" rows="4" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="button" class="btn btn-light fw-bold" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary fw-bold shadow-sm px-4">Lưu thay đổi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .product-card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+    .product-card:hover { transform: translateY(-8px); box-shadow: 0 15px 25px rgba(0,0,0,0.15) !important; }
+    .attr-btn { transition: all 0.2s ease; user-select: none; }
+    .attr-btn:hover { border-color: #0d6efd; color: #0d6efd; }
+    .attr-btn.selected { border-color: #0d6efd !important; background-color: #f8fbff !important; color: #0d6efd; border-width: 2px; font-weight: bold; }
+    .cursor-pointer { cursor: pointer; }
+
+    .product-carousel {
+        display: flex;
+        overflow-x: auto;
+        scroll-behavior: smooth;
+        padding-top: 15px;
+        padding-bottom: 25px;
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+    .product-carousel::-webkit-scrollbar { display: none; }
+    .carousel-item-card { flex: 0 0 auto; width: 25%; }
+    .top-slider-btn {
+        width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        font-weight: bold; transition: all 0.3s ease; background-color: white;
+    }
+    .top-slider-btn:hover { background-color: #0d6efd; color: white; border-color: #0d6efd; }
+    
+    @@media (max-width: 992px) { .carousel-item-card { width: 33.3333%; } }
+    @@media (max-width: 768px) { .carousel-item-card { width: 50%; } }
+    @@media (max-width: 576px) { .carousel-item-card { width: 100%; } }
+
+    /* CSS cho trái tim của sản phẩm tương tự */
+    .heart-btn { transition: all 0.2s ease-in-out; }
+    .heart-btn:hover i { color: #dc3545; transform: scale(1.1); }
+    .heart-btn.liked i { font-weight: 900; color: #dc3545; }
+
+    /* ĐÃ SỬA: CSS CHO NÚT THẢ TIM SẢN PHẨM CHÍNH (Tròn, viền xám, hover hồng) */
+    .main-heart-btn { transition: all 0.2s ease-in-out; outline: none; background-color: white; }
+    .main-heart-btn i { color: #adb5bd; transition: all 0.2s; }
+    .main-heart-btn:hover { background-color: #ffe6e6 !important; border-color: #ffb3b3 !important; }
+    .main-heart-btn:hover i { color: #dc3545; transform: scale(1.1); }
+    .main-heart-btn.liked { background-color: #fff5f5; border-color: #ffb3b3 !important; }
+    .main-heart-btn.liked i { font-weight: 900; color: #dc3545; }
+</style>
+
+@section Scripts {
+    @{
+        var variantData = Model.ProductVariants?
+            .Where(v => v.StockQuantity > 0)
+            .Select(v => {
+                var activePv = variantPromos.OrderByDescending(p => p.DiscountPercent).FirstOrDefault(p => p.VariantId == v.VariantId);
+                int varDiscount = activePv != null ? activePv.DiscountPercent : 0;
+                string promoTitle = activePv != null ? activePv.Promotion.PromotionName : "";
+                
+                var galleryImgs = variantGalleries.Where(g => g.VariantId == v.VariantId).Select(g => g.ImageUrl).ToList();
+                if (!string.IsNullOrEmpty(v.ImageUrl) && !galleryImgs.Contains(v.ImageUrl)) {
+                    galleryImgs.Insert(0, v.ImageUrl);
+                }
+
+                return new {
+                    id = v.VariantId,
+                    price = v.Price,
+                    discount = varDiscount, 
+                    promoName = promoTitle,
+                    stock = v.StockQuantity,
+                    image = v.ImageUrl, 
+                    gallery = galleryImgs,
+                    attributes = v.AttributeValues
+                        .Where(a => a.PredefinedAttributeValue != null && a.PredefinedAttributeValue.ProductAttribute != null)
+                        .ToDictionary(
+                            a => a.PredefinedAttributeValue.ProductAttribute.AttributeName, 
+                            a => a.PredefinedAttributeValue.Value
+                        )
+                };
+            }).ToList();
+    }
+    <script>
+        const variants = @Html.Raw(Json.Serialize(variantData));
+        let selectedAttributes = {};
+
+        function showToastMessage(type, message) {
+            let toastEl = document.getElementById('favoriteToast');
+            let toastMsg = document.getElementById('favoriteToastMessage');
+            let closeBtn = document.getElementById('toastCloseBtn');
+            
+            if (type === 'success') {
+                toastMsg.innerHTML = '<i class="fas fa-check-circle me-2 fs-5"></i>' + message;
+                toastEl.className = 'toast align-items-center text-white bg-success border-0 shadow-lg';
+                closeBtn.classList.add('btn-close-white');
+            } else if (type === 'warning') {
+                toastMsg.innerHTML = '<i class="fas fa-exclamation-triangle me-2 fs-5"></i>' + message;
+                toastEl.className = 'toast align-items-center text-dark bg-warning border-0 shadow-lg';
+                closeBtn.classList.remove('btn-close-white');
+            } else if (type === 'danger') {
+                toastMsg.innerHTML = '<i class="fas fa-exclamation-circle me-2 fs-5"></i>' + message;
+                toastEl.className = 'toast align-items-center text-white bg-danger border-0 shadow-lg';
+                closeBtn.classList.add('btn-close-white');
+            } else {
+                toastMsg.innerHTML = '<i class="fas fa-info-circle me-2 fs-5"></i>' + message;
+                toastEl.className = 'toast align-items-center text-white bg-secondary border-0 shadow-lg';
+                closeBtn.classList.add('btn-close-white');
+            }
+            
+            let toast = new bootstrap.Toast(toastEl, { delay: 4000 });
+            toast.show();
+        }
+
+        function selectAttribute(element, attrName, attrValue) {
+            let groupDiv = element.closest('.attribute-group');
+            groupDiv.querySelectorAll('.attr-btn').forEach(btn => btn.classList.remove('selected'));
+            element.classList.add('selected');
+            selectedAttributes[attrName] = attrValue;
+
+            let attrNameLower = attrName.toLowerCase();
+            let isColorAttribute = attrNameLower.includes('màu') || attrNameLower.includes('color');
+
+            if (isColorAttribute) {
+                let tempImage = null;
+                for (let variant of variants) {
+                    if (variant.attributes[attrName] === attrValue && variant.image && variant.image.trim() !== '') {
+                        tempImage = variant.image;
+                        break;
+                    }
+                }
+                if (tempImage) {
+                    let mainImg = document.getElementById('mainProductImage');
+                    if (mainImg && !mainImg.src.includes(tempImage)) {
+                        mainImg.style.transition = "opacity 0.15s ease-in-out"; 
+                        mainImg.style.opacity = 0.5; 
+                        setTimeout(() => {
+                            mainImg.src = tempImage;
+                            mainImg.style.opacity = 1;
+                        }, 150);
+                    }
+                }
+            }
+
+            let totalGroups = document.querySelectorAll('.attribute-group').length;
+            if (Object.keys(selectedAttributes).length === totalGroups) {
+                checkVariantMatch();
+            }
+        }
+
+        function checkVariantMatch() {
+            let matchedVariant = null;
+
+            for (let variant of variants) {
+                let isMatch = true;
+                for (let key in selectedAttributes) {
+                    if (variant.attributes[key] !== selectedAttributes[key]) {
+                        isMatch = false;
+                        break;
+                    }
+                }
+                if (isMatch) {
+                    matchedVariant = variant;
+                    break;
+                }
+            }
+
+            let btnAdd = document.getElementById('btnAddToCart');
+            let btnBuyNow = document.getElementById('btnBuyNow');
+            let priceDisplay = document.getElementById('displayPrice');
+            let originalPriceDisplay = document.getElementById('originalPrice');
+            let stockStatus = document.getElementById('stockStatus');
+            let badge = document.getElementById('discountBadge');
+
+            if (!matchedVariant) {
+                document.getElementById('selectedVariantId').value = "";
+                document.getElementById('reviewVariantId').value = ""; 
+                
+                stockStatus.innerHTML = `<i class="bi bi-clock-history text-primary me-1"></i> <span class="text-primary fw-bold">Sắp về hàng (Cấu hình này hiện chưa khả dụng)</span>`;
+                if(priceDisplay) priceDisplay.innerHTML = "Liên hệ";
+                if(originalPriceDisplay) originalPriceDisplay.classList.add('d-none');
+                if(badge) badge.classList.add('d-none');
+                if(btnAdd) btnAdd.disabled = true;
+                if(btnBuyNow) btnBuyNow.disabled = true;
+                return; 
+            }
+
+            if (matchedVariant && matchedVariant.stock <= 0) {
+                showToastMessage('warning', 'Phiên bản này đã hết hàng, đang chuyển sang phiên bản còn hàng...');
+
+                let alternative = variants.find(v => v.stock > 0);
+                if (alternative) {
+                    setTimeout(() => {
+                        for (let attrName in alternative.attributes) {
+                            let attrVal = alternative.attributes[attrName];
+                            let btn = document.querySelector(`.attribute-group[data-attr-name="${attrName}"] .variant-option[onclick*="'${attrVal}'"]`);
+                            if (btn) btn.click();
+                        }
+                    }, 1500); 
+                }
+                return;
+            }
+
+            document.getElementById('selectedVariantId').value = matchedVariant.id;
+            document.getElementById('reviewVariantId').value = matchedVariant.id; 
+            
+            let finalPrice = matchedVariant.price;
+            let currentVariantDiscount = matchedVariant.discount || 0; 
+
+            if (currentVariantDiscount > 0) {
+                finalPrice = finalPrice - (finalPrice * currentVariantDiscount / 100);
+                if(originalPriceDisplay) {
+                    originalPriceDisplay.innerHTML = new Intl.NumberFormat('vi-VN').format(matchedVariant.price) + " đ";
+                    originalPriceDisplay.classList.remove('d-none');
+                }
+                if(badge) {
+                    badge.innerHTML = `Giảm ${currentVariantDiscount}% (${matchedVariant.promoName})`;
+                    badge.classList.remove('d-none');
+                }
+            } else {
+                if(originalPriceDisplay) originalPriceDisplay.classList.add('d-none');
+                if(badge) badge.classList.add('d-none');
+            }
+
+            if(priceDisplay) priceDisplay.innerHTML = new Intl.NumberFormat('vi-VN').format(finalPrice) + " đ";
+            stockStatus.innerHTML = `<i class="bi bi-check-circle-fill text-success me-1"></i> <span class="text-success">Sẵn sàng giao hàng (Còn ${matchedVariant.stock} sản phẩm)</span>`;
+            
+            let qtyInput = document.getElementById('quantityInput');
+            qtyInput.setAttribute('max', matchedVariant.stock); 
+            if (parseInt(qtyInput.value) > matchedVariant.stock) qtyInput.value = matchedVariant.stock; 
+            
+            if(btnAdd) btnAdd.disabled = false;
+            if(btnBuyNow) btnBuyNow.disabled = false;
+            
+            if (matchedVariant.image) {
+                let mainImg = document.getElementById('mainProductImage');
+                if (mainImg) mainImg.src = matchedVariant.image;
+            }
+        }
+
+        function changeQty(amount) {
+            let input = document.getElementById('quantityInput');
+            let currentVal = parseInt(input.value);
+            let maxVal = parseInt(input.getAttribute('max')) || 1000; 
+            let newVal = currentVal + amount;
+            
+            if (newVal > maxVal) {
+                showToastMessage('warning', 'Rất tiếc, phiên bản này chỉ còn ' + maxVal + ' sản phẩm trong kho!');
+                input.value = maxVal;
+            } else if (newVal < 1) {
+                showToastMessage('warning', 'Số lượng mua tối thiểu phải là 1!');
+                input.value = 1;
+            } else {
+                input.value = newVal;
+            }
+        }
+        
+        function changeMainImage(element, newSrc) {
+            let mainImg = document.getElementById('mainProductImage');
+            if (mainImg.src.includes(newSrc)) return;
+            document.querySelectorAll('.variant-thumb').forEach(thumb => {
+                thumb.classList.add('opacity-50');
+                thumb.style.borderColor = '#dee2e6'; 
+            });
+            element.classList.remove('opacity-50');
+            element.style.borderColor = '#0d6efd';
+            mainImg.style.opacity = 0.5;
+            setTimeout(() => {
+                mainImg.src = newSrc;
+                mainImg.style.opacity = 1;
+            }, 150);
+        }
+
+        function scrollCarousel(carouselId, direction) {
+            const container = document.getElementById(carouselId);
+            if(container) {
+                const cardWidth = container.querySelector('.carousel-item-card').offsetWidth;
+                container.scrollBy({ left: direction * cardWidth, behavior: 'smooth' });
+            }
+        }
+
+        function toggleReviewLike(btnElement, reviewId) {
+            let icon = btnElement.querySelector('i');
+            let originalClass = icon.className;
+            icon.className = 'fas fa-spinner fa-spin me-1';
+
+            fetch(`/Product/ToggleReviewLike?reviewId=${reviewId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success === false && data.message === "require_login") {
+                    let loginModalEl = document.getElementById('loginRequireModal') || document.getElementById('loginRequireFavModal');
+                    if (loginModalEl) {
+                        new bootstrap.Modal(loginModalEl).show();
+                    } else {
+                        window.location.href = "/Account/Login";
+                    }
+                    icon.className = originalClass;
+                    return;
+                }
+
+                if (data.success) {
+                    document.getElementById(`like-count-${reviewId}`).innerText = data.newCount;
+                    
+                    if (data.isLiked) {
+                        btnElement.classList.remove('text-secondary');
+                        btnElement.classList.add('text-primary');
+                        icon.className = 'fas fa-thumbs-up me-1 text-primary';
+                    } else {
+                        btnElement.classList.remove('text-primary');
+                        btnElement.classList.add('text-secondary');
+                        icon.className = 'far fa-thumbs-up me-1';
+                    }
+                } else {
+                    showToastMessage('danger', data.message || "Lỗi hệ thống!");
+                    icon.className = originalClass;
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                icon.className = originalClass;
+            });
+        }
+
+        function openEditReviewModal(reviewId, currentRating, currentComment) {
+            document.getElementById('editReviewId').value = reviewId;
+            document.getElementById('editComment').value = currentComment;
+            document.getElementById('editRatingValue').value = currentRating;
+
+            $('.edit-star-sel').each(function () {
+                if ($(this).data('val') <= currentRating) {
+                    $(this).removeClass('far').addClass('fas');
+                } else {
+                    $(this).removeClass('fas').addClass('far');
+                }
+            });
+
+            var editModal = new bootstrap.Modal(document.getElementById('editReviewModal'));
+            editModal.show();
+        }
+
+        function toggleFavorite(btnElement, productId) {
+            fetch('/Product/ToggleFavorite?productId=' + productId, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success === false && data.message === "require_login") {
+                    let loginModalEl = document.getElementById('loginRequireModal') || document.getElementById('loginRequireFavModal');
+                    if (loginModalEl) {
+                        new bootstrap.Modal(loginModalEl).show();
+                    } else {
+                        window.location.href = "/Account/Login";
+                    }
+                    return;
+                }
+                if (data.success === true) {
+                    let icon = btnElement.querySelector('i');
+                    if (data.isFavorite) {
+                        icon.classList.remove('far'); 
+                        icon.classList.add('fas'); 
+                        btnElement.classList.add('liked');
+                        showToastMessage('success', 'Đã thêm vào danh sách yêu thích!');
+                    } else {
+                        icon.classList.remove('fas'); 
+                        icon.classList.add('far'); 
+                        btnElement.classList.remove('liked');
+                        showToastMessage('info', 'Đã bỏ khỏi danh sách yêu thích!');
+                    }
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        $(document).ready(function () {
+            
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <text>showToastMessage('success', '@TempData["SuccessMessage"]');</text>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <text>showToastMessage('danger', '@TempData["ErrorMessage"]');</text>
+            }
+
+            $('.star-sel').hover(
+                function () {
+                    var val = $(this).data('val');
+                    $('.star-sel').each(function () {
+                        if ($(this).data('val') <= val) $(this).removeClass('far').addClass('fas');
+                        else $(this).removeClass('fas').addClass('far');
+                    });
+                },
+                function () {
+                    var val = $('#ratingValue').val();
+                    $('.star-sel').each(function () {
+                        if ($(this).data('val') <= val) $(this).removeClass('far').addClass('fas');
+                        else $(this).removeClass('fas').addClass('far');
+                    });
+                }
+            );
+
+            $('.star-sel').click(function () {
+                var val = $(this).data('val');
+                $('#ratingValue').val(val);
+                $('#ratingError').addClass('d-none');
+            });
+
+            $('.edit-star-sel').hover(
+                function () {
+                    var val = $(this).data('val');
+                    $('.edit-star-sel').each(function () {
+                        if ($(this).data('val') <= val) $(this).removeClass('far').addClass('fas');
+                        else $(this).removeClass('fas').addClass('far');
+                    });
+                },
+                function () {
+                    var val = $('#editRatingValue').val();
+                    $('.edit-star-sel').each(function () {
+                        if ($(this).data('val') <= val) $(this).removeClass('far').addClass('fas');
+                        else $(this).removeClass('fas').addClass('far');
+                    });
+                }
+            );
+
+            $('.edit-star-sel').click(function () {
+                var val = $(this).data('val');
+                $('#editRatingValue').val(val);
+            });
+
+            $('#reviewForm').submit(function (e) {
+                if ($('#ratingValue').val() === "0") {
+                    e.preventDefault(); 
+                    $('#ratingError').removeClass('d-none'); 
+                }
+            });
+
+            function handleCartAction(e, button, actionName) {
+                e.preventDefault(); 
+                let form = document.getElementById('addToCartForm');
+                let formData = new FormData(form);
+                
+                let originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>ĐANG XỬ LÝ...';
+                button.disabled = true;
+
+                fetch('/Cart/AddToCart', {
+                    method: 'POST',
+                    body: formData,
+                    redirect: 'follow'
+                })
+                .then(async response => {
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+
+                    if (response.redirected && response.url.toLowerCase().includes('login')) {
+                        let loginModalEl = document.getElementById('loginRequireModal') || document.getElementById('loginRequireFavModal');
+                        if (loginModalEl) new bootstrap.Modal(loginModalEl).show();
+                        else window.location.href = response.url;
+                        return;
+                    }
+
+                    let html = await response.text();
+                    
+                    let hasError = false;
+                    let errorMessage = "Đã xảy ra lỗi, vui lòng thử lại!";
+
+                    let errorMatch = html.match(/showToastMessage\('danger',\s*'([^']+)'\)/);
+                    if (errorMatch && errorMatch[1]) {
+                        hasError = true;
+                        errorMessage = errorMatch[1];
+                    } else {
+                        let tempDoc = new DOMParser().parseFromString(html, 'text/html');
+                        let alertNode = tempDoc.querySelector('.alert-danger');
+                        if (alertNode) {
+                            hasError = true;
+                            let closeBtn = alertNode.querySelector('.btn-close');
+                            if (closeBtn) closeBtn.remove();
+                            errorMessage = alertNode.innerText.trim();
+                        }
+                    }
+
+                    if (hasError) {
+                        showToastMessage('danger', errorMessage);
+                        return;
+                    }
+
+                    if (actionName === 'BuyNow') {
+                        window.location.href = '/Cart/Index';
+                    } else {
+                        showToastMessage('success', 'Đã thêm sản phẩm vào giỏ hàng thành công!');
+                        
+                        let tempDoc = new DOMParser().parseFromString(html, 'text/html');
+                        let newBadge = tempDoc.querySelector('.nav-item .badge.bg-danger');
+                        let currentBadge = document.querySelector('.nav-item .badge.bg-danger');
+                        
+                        if (newBadge && currentBadge) {
+                            currentBadge.innerText = newBadge.innerText;
+                        } else if (currentBadge) {
+                            let qtyInput = document.getElementById('quantityInput').value;
+                            let currentVal = parseInt(currentBadge.innerText) || 0;
+                            currentBadge.innerText = currentVal + parseInt(qtyInput);
+                        }
+                    }
+                })
+                .catch(error => {
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                    showToastMessage('danger', 'Lỗi kết nối máy chủ!');
+                });
+            }
+
+            let btnAddCart = document.getElementById('btnAddToCart');
+            if(btnAddCart) {
+                btnAddCart.addEventListener('click', function(e) { handleCartAction(e, this, 'AddToCart'); });
+            }
+
+            let btnBuyNow = document.getElementById('btnBuyNow');
+            if(btnBuyNow) {
+                btnBuyNow.addEventListener('click', function(e) { handleCartAction(e, this, 'BuyNow'); });
+            }
+
+            var selectedVariantId = '@ViewBag.SelectedVariantId';
+
+            if (selectedVariantId && selectedVariantId !== '') {
+                var productSection = document.getElementById('mainProductImage');
+                if (productSection) {
+                    productSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+
+                setTimeout(function() {
+                    let targetVariantObj = variants.find(v => v.id.toString() === selectedVariantId);
+                    
+                    if (targetVariantObj) {
+                        for (let attrName in targetVariantObj.attributes) {
+                            let attrVal = targetVariantObj.attributes[attrName];
+                            
+                            let allBtns = document.querySelectorAll(`.attribute-group[data-attr-name="${attrName}"] .variant-option`);
+                            for (let btn of allBtns) {
+                                if (btn.innerText.trim() === attrVal || (btn.innerHTML.includes('style') && btn.dataset.variantId == selectedVariantId)) {
+                                    btn.click();
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }, 300);
+            }
+        });
+    </script>
+}

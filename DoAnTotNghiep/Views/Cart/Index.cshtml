@@ -1,0 +1,169 @@
+﻿@model List<DoAnTotNghiep.Models.CartItem>
+@{
+    ViewData["Title"] = "Giỏ hàng của bạn";
+}
+<div class="container mt-4 mb-5">
+    <h2 class="fw-bold text-center mb-4">🛒 GIỎ HÀNG CỦA BẠN</h2>
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show fw-bold shadow-sm" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (Model == null || Model.Count == 0)
+    {
+        <div class="alert alert-info text-center fw-bold p-5 shadow-sm">
+            Giỏ hàng đang trống. <a asp-controller="Product" asp-action="Index" class="text-danger text-decoration-none">Tiếp tục mua sắm ngay!</a>
+        </div>
+    }
+    else
+    {
+        <div class="card shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Sản phẩm</th>
+                                <th class="text-center">Đơn giá</th>
+                                <th class="text-center" style="width: 150px;">Số lượng</th>
+                                <th class="text-end">Thành tiền</th>
+                                <th class="text-center">Xóa</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                string uniqueId = $"{item.ProductId}-{item.VariantId ?? 0}";
+
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="@item.ThumbnailUrl" style="width: 60px; height: 60px; object-fit: contain;" class="me-3 border rounded p-1" />
+                                            <div>
+                                                <a asp-controller="Product" asp-action="Details" asp-route-id="@item.ProductId" class="fw-bold text-dark text-decoration-none">
+                                                    @item.ProductName
+                                                </a>
+                                                @if (!string.IsNullOrEmpty(item.VariantName))
+                                                {
+                                                    <div class="mt-2 d-flex flex-wrap gap-2">
+                                                        @{
+                                                            // Logic tách chuỗi để vẽ cục màu
+                                                            var attrs = item.VariantName.Split('|', StringSplitOptions.RemoveEmptyEntries);
+                                                            foreach (var a in attrs)
+                                                            {
+                                                                var parts = a.Split(':', 2);
+                                                                if (parts.Length == 2)
+                                                                {
+                                                                    string attrName = parts[0].Trim();
+                                                                    string attrVal = parts[1].Trim();
+                                                                    bool isColor = attrName.ToLower().Contains("màu") || attrName.ToLower().Contains("color");
+
+                                                                    <span class="badge bg-light text-dark border d-inline-flex align-items-center py-1 px-2 shadow-sm">
+                                                                        @if (isColor && attrVal.StartsWith("#"))
+                                                                        {
+                                                                            <span>@attrName:</span>
+                                                                            <span class="rounded-circle border border-secondary ms-2 shadow-sm" style="width: 14px; height: 14px; background-color: @attrVal; display: inline-block;"></span>
+                                                                        }
+                                                                        else
+                                                                        {
+                                                                            <span>@attrName: @attrVal</span>
+                                                                        }
+                                                                    </span>
+                                                                }
+                                                                else
+                                                                {
+                                                                    <span class="badge bg-light text-dark border">@a.Trim()</span>
+                                                                }
+                                                            }
+                                                        }
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center text-danger fw-bold">@item.Price.ToString("#,##0") đ</td>
+
+                                    <td class="text-center">
+                                        <input type="number" class="form-control text-center mx-auto quantity-input"
+                                               data-product-id="@item.ProductId"
+                                               data-variant-id="@item.VariantId"
+                                               data-unique-id="@uniqueId"
+                                               value="@item.Quantity" min="1" style="width: 80px;" />
+                                    </td>
+
+                                    <td class="text-end text-danger fw-bold fs-5" id="item-total-@uniqueId">
+                                        @item.TotalAmount.ToString("#,##0") đ
+                                    </td>
+
+                                    <td class="text-center">
+                                        <a asp-action="RemoveFromCart"
+                                           asp-route-productId="@item.ProductId"
+                                           asp-route-variantId="@item.VariantId"
+                                           class="btn btn-sm btn-outline-danger shadow-sm border-0" title="Xóa sản phẩm">
+                                            <i class="bi bi-trash fs-5"></i> ❌
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr>
+                                <td colspan="3" class="text-end fw-bold fs-4">TỔNG CỘNG:</td>
+                                <td colspan="2" class="text-end text-danger fw-bold fs-3" id="cart-grand-total">
+                                    @Model.Sum(x => x.TotalAmount).ToString("#,##0") đ
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer bg-white p-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <a asp-controller="Product" asp-action="Index" class="btn btn-outline-secondary fw-bold">⬅ Tiếp tục mua sắm</a>
+                <a asp-controller="Cart" asp-action="Checkout" class="btn btn-danger btn-lg fw-bold px-5">THANH TOÁN 💳</a>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            let isReloading = false;
+            $('.quantity-input').on('change', function () {
+                var productId = $(this).data('product-id');
+                var variantId = $(this).data('variant-id');
+                var uniqueId = $(this).data('unique-id');
+                var newQuantity = $(this).val();
+                if (newQuantity === '' || newQuantity < 1) return;
+                $.ajax({
+                    url: '@Url.Action("UpdateQuantity", "Cart")',
+                    type: 'POST',
+                    data: {
+                        productId: productId,
+                        variantId: variantId,
+                        quantity: newQuantity
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            $('#item-total-' + uniqueId).text(response.itemTotal);
+                            $('#cart-grand-total').text(response.cartTotal);
+                        } else {
+                            if (!isReloading) {
+                                isReloading = true;
+                                alert(response.message);
+                                location.reload();
+                            }
+                        }
+                    },
+                    error: function () {
+                        if (!isReloading) {
+                            alert("Có lỗi kết nối! Vui lòng tải lại trang.");
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+}

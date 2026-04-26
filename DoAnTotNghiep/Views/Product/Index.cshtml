@@ -1,0 +1,448 @@
+﻿@model IEnumerable<DoAnTotNghiep.Models.Product>
+
+@{
+    ViewData["Title"] = "Tất cả sản phẩm";
+    var promoDict = ViewBag.PromoDict as Dictionary<int, int>;
+
+    // LẤY DANH SÁCH SẢN PHẨM ĐÃ YÊU THÍCH TỪ CONTROLLER
+    var favoritedIds = ViewBag.FavoritedIds as List<int> ?? new List<int>();
+
+    // =========================================================================
+    // HÀM 1: LẤY BIẾN THỂ CÓ GIÁ RẺ NHẤT
+    // =========================================================================
+    (DoAnTotNghiep.Models.ProductVariant BestVariant, int Discount, decimal SalePrice) GetBestVariantInfo(IEnumerable<DoAnTotNghiep.Models.ProductVariant> variants)
+    {
+        if (variants == null || !variants.Any()) return (null, 0, 0);
+
+        var best = variants.Select(v =>
+        {
+            int disc = (promoDict != null && promoDict.ContainsKey(v.VariantId)) ? promoDict[v.VariantId] : 0;
+            decimal sPrice = v.Price - (v.Price * disc / 100m);
+            return new { Variant = v, Discount = disc, SalePrice = sPrice };
+        }).OrderBy(x => x.SalePrice).First();
+
+        return (best.Variant, best.Discount, best.SalePrice);
+    }
+
+    // =========================================================================
+    // HÀM 2: RENDER THẺ SẢN PHẨM DẠNG GRID (CỘT)
+    // =========================================================================
+    void RenderProductCard(DoAnTotNghiep.Models.Product item, string title, string imgUrl, decimal basePrice, decimal salePrice, bool isSale, int discount, string prefix, int variantId)
+    {
+        var approvedReviews = item.Reviews?.Where(r => r.IsApproved).ToList() ?? new List<DoAnTotNghiep.Models.Review>();
+        double avgRating = approvedReviews.Any() ? Math.Round(approvedReviews.Average(r => r.Rating), 1) : 0;
+        int totalReviews = approvedReviews.Count;
+        bool isFav = favoritedIds.Contains(item.ProductId);
+
+        <div class="col">
+            <div class="card h-100 shadow-sm product-card transition-hover position-relative border-0 rounded-4">
+                @if (isSale)
+                {
+                    <div class="position-absolute top-0 end-0 bg-danger text-white fw-bold px-2 py-1 m-2 rounded-circle shadow" style="z-index: 2;">
+                        -@discount%
+                    </div>
+                }
+
+                <a href="/Product/Details/@item.ProductId?variantId=@variantId">
+                    <img src="@imgUrl" class="card-img-top p-3" alt="@title" style="height: 220px; object-fit: contain;">
+                </a>
+
+                <div class="card-body d-flex flex-column text-center bg-light rounded-bottom-4">
+                    <h6 class="card-title fw-bold mb-3" style="height: 40px; overflow: hidden;">
+                        <a href="/Product/Details/@item.ProductId?variantId=@variantId" class="text-decoration-none text-dark">@title</a>
+                    </h6>
+
+                    <div class="mb-3 mt-auto">
+                        @if (basePrice > 0)
+                        {
+                            @if (isSale)
+                            {
+                                <span class="text-muted text-decoration-line-through me-2" style="font-size: 0.85rem;">@basePrice.ToString("#,##0") đ</span>
+                                <span class="text-danger fw-bold fs-5">@prefix @salePrice.ToString("#,##0") đ</span>
+                            }
+                            else
+                            {
+                                <span class="text-danger fw-bold fs-5">@prefix @basePrice.ToString("#,##0") đ</span>
+                            }
+                        }
+                        else
+                        {
+                            <span class="text-secondary fw-bold fs-6 fst-italic px-3 py-1 bg-white rounded-pill border">Sắp về hàng</span>
+                        }
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center pt-3 mt-2 border-top border-secondary-subtle">
+                        <div class="d-flex align-items-center">
+                            <div class="text-warning fw-bold me-1" style="font-size: 0.95rem;" title="@avgRating sao (@totalReviews đánh giá)">
+                                @avgRating.ToString("0.0") <i class="fas fa-star"></i>
+                            </div>
+                            <span class="text-muted fw-bold" style="font-size: 0.85rem;">(@totalReviews)</span>
+                        </div>
+
+                        <a href="javascript:void(0);" onclick="toggleFavorite(this, @item.ProductId)" class="heart-btn text-decoration-none @(isFav ? "liked" : "text-secondary")">
+                            <i class="@(isFav ? "fas" : "far") fa-heart fs-5"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+<div class="container mt-4 mb-5">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Sản phẩm</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-3 mb-4">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-header bg-primary text-white text-uppercase fw-bold rounded-top-4 py-3">
+                    <i class="bi bi-funnel-fill me-2"></i> Lọc sản phẩm
+                </div>
+                <div class="card-body p-4 bg-light rounded-bottom-4">
+                    <form asp-action="Index" method="get" id="filterForm">
+                        <input type="hidden" name="page" id="pageInput" value="@ViewBag.CurrentPage" />
+
+                        @if (!string.IsNullOrEmpty(ViewBag.SearchKeyword))
+                        {
+                            <input type="hidden" name="searchString" value="@ViewBag.SearchKeyword" />
+                        }
+
+                        @if (ViewBag.CategoryId != null)
+                        {
+                            <input type="hidden" name="categoryId" value="@ViewBag.CategoryId" />
+                        }
+                        @if (ViewBag.BrandId != null)
+                        {
+                            <input type="hidden" name="brandId" value="@ViewBag.BrandId" />
+                        }
+                        <div class="mb-4 pb-3 border-bottom">
+                            <h6 class="fw-bold text-dark mb-3">Giá</h6>
+                            <div class="d-flex align-items-center justify-content-between mb-4 gap-2">
+                                <div class="input-group input-group-sm border rounded">
+                                    <input type="number" id="inputMinPrice" name="minPrice" class="form-control border-0 text-center fw-bold text-primary" value="@(ViewBag.MinPrice ?? 0)" min="0" max="100000000" step="100000">
+                                    <span class="input-group-text bg-white border-0 text-muted fw-bold">đ</span>
+                                </div>
+                                <span class="text-muted fw-bold">-</span>
+                                <div class="input-group input-group-sm border rounded">
+                                    <input type="number" id="inputMaxPrice" name="maxPrice" class="form-control border-0 text-center fw-bold text-primary" value="@(ViewBag.MaxPrice ?? 100000000)" min="0" max="100000000" step="100000">
+                                    <span class="input-group-text bg-white border-0 text-muted fw-bold">đ</span>
+                                </div>
+                            </div>
+                            <div class="range-slider-container position-relative">
+                                <div class="slider-track"></div>
+                                <input type="range" id="rangeMin" min="0" max="100000000" step="100000" value="@(ViewBag.MinPrice ?? 0)">
+                                <input type="range" id="rangeMax" min="0" max="100000000" step="100000" value="@(ViewBag.MaxPrice ?? 100000000)">
+                            </div>
+                            <div class="d-flex justify-content-between text-muted mt-2" style="font-size: 0.8rem;">
+                                <span>0đ</span>
+                                <span>100.000.000đ</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <h6 class="fw-bold text-dark mb-3">Sắp xếp theo</h6>
+                            <select name="sortOrder" class="form-select shadow-sm">
+                                <option value="newest" selected="@(ViewBag.SortOrder == "newest" ? "selected" : null)">Mới nhất</option>
+                                <option value="price_asc" selected="@(ViewBag.SortOrder == "price_asc" ? "selected" : null)">Giá: Thấp đến Cao</option>
+                                <option value="price_desc" selected="@(ViewBag.SortOrder == "price_desc" ? "selected" : null)">Giá: Cao đến Thấp</option>
+                                <option value="name_asc" selected="@(ViewBag.SortOrder == "name_asc" ? "selected" : null)">Tên: A - Z</option>
+                            </select>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="button" class="btn btn-primary fw-bold shadow-sm" onclick="submitPage(1)">
+                                Áp dụng bộ lọc
+                            </button>
+                            <a asp-action="Index" class="btn btn-outline-danger fw-bold shadow-sm">Xóa bộ lọc</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-9">
+            @if (!string.IsNullOrEmpty(ViewBag.SearchKeyword))
+            {
+                <h4 class="fw-bold mb-4">
+                    Kết quả tìm kiếm cho: <span class="text-danger">"@ViewBag.SearchKeyword"</span>
+                </h4>
+            }
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="fw-bold text-uppercase m-0">Sản phẩm</h3>
+                <span class="text-muted fw-bold">Tìm thấy @ViewBag.TotalItems sản phẩm</span>
+            </div>
+
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                @if (Model != null && Model.Any())
+                {
+                    @foreach (var item in Model)
+                    {
+                        var configGroups = item.ProductVariants?.Where(v => v.AttributeValues != null)
+                            .Select(v => new
+                            {
+                                Variant = v,
+                                ConfigName = v.AttributeValues.FirstOrDefault(a => a.PredefinedAttributeValue?.ProductAttribute?.AttributeName.ToLower().Contains("dung lượng") == true || a.PredefinedAttributeValue?.ProductAttribute?.AttributeName.ToLower().Contains("rom") == true)?.PredefinedAttributeValue?.Value
+                            }).Where(x => !string.IsNullOrEmpty(x.ConfigName)).GroupBy(x => x.ConfigName).ToList();
+
+                        if (configGroups != null && configGroups.Any())
+                        {
+                            foreach (var group in configGroups)
+                            {
+                                var info = GetBestVariantInfo(group.Select(g => g.Variant));
+                                if (info.BestVariant == null) continue;
+
+                                decimal basePrice = info.BestVariant.Price;
+                                int discount = info.Discount;
+                                bool isSale = discount > 0;
+                                decimal salePrice = info.SalePrice;
+                                string cardTitle = $"{item.ProductName} {group.Key}";
+                                string imgUrl = !string.IsNullOrEmpty(info.BestVariant.ImageUrl) ? info.BestVariant.ImageUrl : item.ThumbnailUrl;
+
+                                RenderProductCard(item, cardTitle, imgUrl, basePrice, salePrice, isSale, discount, "", info.BestVariant.VariantId);
+                            }
+                        }
+                        else
+                        {
+                            var info = GetBestVariantInfo(item.ProductVariants);
+                            decimal basePrice = info.BestVariant?.Price ?? 0;
+                            int discount = info.Discount;
+                            bool isSale = discount > 0;
+                            decimal salePrice = info.SalePrice;
+                            bool hasManyPrices = item.ProductVariants != null && item.ProductVariants.Select(v => v.Price).Distinct().Count() > 1;
+                            string prefix = hasManyPrices ? "Giá từ: " : "";
+                            int vId = info.BestVariant?.VariantId ?? 0;
+
+                            RenderProductCard(item, item.ProductName, item.ThumbnailUrl, basePrice, salePrice, isSale, discount, prefix, vId);
+                        }
+                    }
+                }
+                else
+                {
+                    <div class="col-12 text-center py-5">
+                        <h4 class="text-muted fw-bold">Không tìm thấy sản phẩm nào phù hợp với bộ lọc!</h4>
+                        <img src="~/images/empty-cart.png" alt="Empty" style="width: 150px; opacity: 0.5;" class="mt-3" />
+                    </div>
+                }
+            </div>
+
+            @if (ViewBag.TotalPages > 1)
+            {
+                <nav aria-label="Page navigation" class="mt-5">
+                    <ul class="pagination justify-content-center shadow-sm">
+                        <li class="page-item @(ViewBag.CurrentPage == 1 ? "disabled" : "")">
+                            <a class="page-link fw-bold px-3 cursor-pointer" onclick="submitPage(@(ViewBag.CurrentPage - 1))">❮ Trước</a>
+                        </li>
+
+                        @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                        {
+                            <li class="page-item @(i == ViewBag.CurrentPage ? "active" : "")">
+                                <a class="page-link fw-bold px-3 cursor-pointer" onclick="submitPage(@i)">@i</a>
+                            </li>
+                        }
+
+                        <li class="page-item @(ViewBag.CurrentPage == ViewBag.TotalPages ? "disabled" : "")">
+                            <a class="page-link fw-bold px-3 cursor-pointer" onclick="submitPage(@(ViewBag.CurrentPage + 1))">Sau ❯</a>
+                        </li>
+                    </ul>
+                </nav>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="loginRequireFavModal" tabindex="-1" aria-labelledby="loginRequireFavModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-warning text-dark rounded-top-4 border-0">
+                <h5 class="modal-title fw-bold" id="loginRequireFavModalLabel">
+                    <i class="fas fa-lock me-2"></i>Yêu cầu đăng nhập
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <div class="text-warning mb-3">
+                    <i class="fas fa-user-circle" style="font-size: 3rem;"></i>
+                </div>
+                <p class="fs-5 mb-0 fw-bold text-dark">Vui lòng đăng nhập!</p>
+                <p class="text-muted small mt-2">Bạn cần đăng nhập để có thể thêm sản phẩm vào danh sách yêu thích.</p>
+            </div>
+            <div class="modal-footer border-0 p-4 pt-0 justify-content-center gap-2">
+                <button type="button" class="btn btn-light fw-bold px-4 rounded-pill" data-bs-dismiss="modal">Hủy bỏ</button>
+                <a asp-area="" asp-controller="Account" asp-action="Login" class="btn btn-primary fw-bold px-4 rounded-pill shadow-sm">
+                    Đăng nhập
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1055">
+    <div id="favoriteToast" class="toast align-items-center text-white border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body fw-bold fs-6" id="favoriteToastMessage">
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .product-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+        .product-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 25px rgba(0,0,0,0.15) !important;
+        }
+
+    .cursor-pointer {
+        cursor: pointer;
+    }
+
+    .range-slider-container {
+        height: 6px;
+        background-color: #e9ecef;
+        border-radius: 5px;
+        margin-top: 10px;
+        margin-bottom: 10px;
+    }
+
+        .range-slider-container input[type="range"] {
+            position: absolute;
+            width: 100%;
+            height: 6px;
+            top: 0;
+            background: none;
+            pointer-events: none;
+            -webkit-appearance: none;
+        }
+
+            .range-slider-container input[type="range"]::-webkit-slider-thumb {
+                height: 22px;
+                width: 22px;
+                border-radius: 2px;
+                background: #0d6efd;
+                pointer-events: auto;
+                -webkit-appearance: none;
+                cursor: pointer;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            }
+
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    .heart-btn {
+        transition: all 0.2s ease-in-out;
+    }
+
+        .heart-btn:hover i {
+            color: #dc3545;
+            transform: scale(1.1);
+        }
+
+        .heart-btn.liked i {
+            font-weight: 900;
+            color: #dc3545;
+        }
+</style>
+
+@section Scripts {
+    <script>
+        function submitPage(pageNumber) {
+            document.getElementById('pageInput').value = pageNumber;
+            let minInput = document.getElementById('inputMinPrice');
+            let maxInput = document.getElementById('inputMaxPrice');
+            if (minInput.value == "0") minInput.disabled = true;
+            if (maxInput.value == "100000000") maxInput.disabled = true;
+            document.getElementById('filterForm').submit();
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const rangeMin = document.getElementById('rangeMin');
+            const rangeMax = document.getElementById('rangeMax');
+            const inputMin = document.getElementById('inputMinPrice');
+            const inputMax = document.getElementById('inputMaxPrice');
+            const priceGap = 1000000;
+            if (rangeMin && rangeMax && inputMin && inputMax) {
+                rangeMin.addEventListener('input', function () {
+                    let minVal = parseInt(rangeMin.value);
+                    let maxVal = parseInt(rangeMax.value);
+                    if ((maxVal - minVal) < priceGap) { rangeMin.value = maxVal - priceGap; }
+                    inputMin.value = rangeMin.value;
+                });
+                rangeMax.addEventListener('input', function () {
+                    let minVal = parseInt(rangeMin.value);
+                    let maxVal = parseInt(rangeMax.value);
+                    if ((maxVal - minVal) < priceGap) { rangeMax.value = minVal + priceGap; }
+                    inputMax.value = rangeMax.value;
+                });
+                inputMin.addEventListener('change', function () {
+                    if (this.value === "") this.value = 0;
+                    rangeMin.value = this.value;
+                });
+                inputMax.addEventListener('change', function () {
+                    if (this.value === "") this.value = 100000000;
+                    rangeMax.value = this.value;
+                });
+            }
+        });
+
+        // ĐÃ SỬA: Bắt sự kiện thả tim và hiển thị Modal nếu chưa đăng nhập
+        function toggleFavorite(btnElement, productId) {
+             fetch('/Product/ToggleFavorite?productId=' + productId, {
+                 method: 'POST',
+                 headers: { 'Content-Type': 'application/json' }
+             })
+             .then(response => response.json())
+             .then(data => {
+                 if (data.success === false && data.message === "require_login") {
+                     // Lấy modal yêu cầu đăng nhập (Ưu tiên modal ở _Layout, nếu không có thì lấy modal vừa thêm)
+                     let loginModalEl = document.getElementById('loginRequireModal') || document.getElementById('loginRequireFavModal');
+                     if (loginModalEl) {
+                         let loginModal = new bootstrap.Modal(loginModalEl);
+                         loginModal.show();
+                     } else {
+                         window.location.href = "/Account/Login";
+                     }
+                     return;
+                 }
+                 
+                 if (data.success === true) {
+                     let icon = btnElement.querySelector('i');
+                     let toastEl = document.getElementById('favoriteToast');
+                     let toastMsg = document.getElementById('favoriteToastMessage');
+
+                     if (data.isFavorite) {
+                         icon.classList.remove('far');
+                         icon.classList.add('fas');
+                         btnElement.classList.add('liked');
+
+                         toastMsg.innerHTML = '<i class="fas fa-check-circle me-2 fs-5"></i>Đã thêm vào danh sách yêu thích!';
+                         toastEl.className = 'toast align-items-center text-white bg-success border-0 shadow-lg';
+                     } else {
+                         icon.classList.remove('fas');
+                         icon.classList.add('far');
+                         btnElement.classList.remove('liked');
+
+                         toastMsg.innerHTML = '<i class="fas fa-info-circle me-2 fs-5"></i>Đã bỏ khỏi danh sách yêu thích!';
+                         toastEl.className = 'toast align-items-center text-white bg-secondary border-0 shadow-lg';
+                     }
+
+                     let toast = new bootstrap.Toast(toastEl, { delay: 3000 });
+                     toast.show();
+                 }
+             })
+             .catch(error => console.error('Error:', error));
+         }
+    </script>
+}

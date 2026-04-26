@@ -1,0 +1,224 @@
+﻿@model IEnumerable<DoAnTotNghiep.Models.Favorite>
+
+@{
+    ViewData["Title"] = "Sản phẩm yêu thích của bạn";
+    var promoDict = ViewBag.PromoDict as Dictionary<int, int>;
+}
+
+<div class="container mt-4 mb-5">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none">Trang chủ</a></li>
+            <li class="breadcrumb-item active fw-bold text-danger" aria-current="page">Sản phẩm yêu thích</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+        <h2 class="fw-bold text-danger m-0"><i class="fas fa-heart me-2"></i>Danh sách yêu thích</h2>
+        <span class="text-muted fw-bold">Bạn đã thích <span id="favCountText">@Model.Count()</span> sản phẩm</span>
+    </div>
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4" id="favoritesContainer">
+            @foreach (var fav in Model)
+            {
+                var item = fav.Product;
+                bool isSale = promoDict != null && promoDict.ContainsKey(item.ProductId);
+                int discount = isSale ? promoDict[item.ProductId] : 0;
+
+                decimal basePrice = (item.ProductVariants != null && item.ProductVariants.Any())
+                ? item.ProductVariants.Min(v => v.Price) : 0;
+                decimal salePrice = basePrice - (basePrice * discount / 100m);
+
+                <div class="col" id="fav-card-@item.ProductId">
+                    <div class="card h-100 shadow-sm product-card transition-hover position-relative border-0 rounded-4">
+                        @if (isSale)
+                        {
+                            <div class="position-absolute top-0 end-0 bg-danger text-white fw-bold px-2 py-1 m-2 rounded-circle shadow" style="z-index: 2;">
+                                -@discount%
+                            </div>
+                        }
+
+                        <a asp-controller="Product" asp-action="Details" asp-route-id="@item.ProductId">
+                            <img src="@item.ThumbnailUrl" class="card-img-top p-3" alt="@item.ProductName" style="height: 200px; object-fit: contain;">
+                        </a>
+
+                        <div class="card-body d-flex flex-column text-center bg-light rounded-bottom-4">
+                            <h6 class="card-title fw-bold mb-3" style="height: 40px; overflow: hidden;">
+                                <a asp-controller="Product" asp-action="Details" asp-route-id="@item.ProductId" class="text-decoration-none text-dark">@item.ProductName</a>
+                            </h6>
+
+                            <div class="mb-3 mt-auto">
+                                @if (isSale)
+                                {
+                                    <span class="text-muted text-decoration-line-through me-2" style="font-size: 0.9rem;">
+                                        @basePrice.ToString("#,##0") đ
+                                    </span>
+                                    <span class="text-danger fw-bold fs-5">
+                                        @salePrice.ToString("#,##0") đ
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="text-danger fw-bold fs-5">@basePrice.ToString("#,##0") đ</span>
+                                }
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                                <button class="btn btn-outline-secondary btn-sm rounded-pill fw-bold shadow-none" onclick="openRemoveModal(@item.ProductId)">
+                                    <i class="fas fa-trash-alt me-1"></i> Bỏ thích
+                                </button>
+
+                                <a asp-controller="Product" asp-action="Details" asp-route-id="@item.ProductId" class="btn btn-primary btn-sm rounded-pill fw-bold shadow-sm">
+                                    <i class="fas fa-eye me-1"></i> Xem chi tiết
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5 my-5 bg-light rounded-4 shadow-sm">
+            <i class="far fa-heart text-muted mb-3" style="font-size: 5rem;"></i>
+            <h4 class="fw-bold text-secondary">Danh sách yêu thích của bạn đang trống!</h4>
+            <p class="text-muted mb-4">Hãy dạo quanh cửa hàng và "thả tim" cho những sản phẩm bạn ưng ý nhé.</p>
+            <a asp-controller="Product" asp-action="Index" class="btn btn-primary btn-lg fw-bold rounded-pill shadow-sm px-5">Khám phá ngay</a>
+        </div>
+    }
+</div>
+
+<div class="modal fade" id="removeFavoriteModal" tabindex="-1" aria-labelledby="removeFavoriteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-danger text-white rounded-top-4 border-0">
+                <h5 class="modal-title fw-bold" id="removeFavoriteModalLabel">
+                    <i class="fas fa-heart-broken me-2"></i>Bỏ yêu thích
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <div class="text-danger mb-3">
+                    <i class="fas fa-trash-alt" style="font-size: 3rem;"></i>
+                </div>
+                <p class="fs-5 mb-0 fw-bold text-dark">Bỏ sản phẩm này?</p>
+                <p class="text-muted small mt-2">Sản phẩm sẽ bị xóa khỏi danh sách yêu thích của bạn.</p>
+            </div>
+            <div class="modal-footer border-0 p-4 pt-0 justify-content-center gap-2">
+                <button type="button" class="btn btn-light fw-bold px-4 rounded-pill" data-bs-dismiss="modal">Hủy bỏ</button>
+                <button type="button" class="btn btn-danger fw-bold px-4 rounded-pill shadow-sm" id="confirmRemoveBtn">
+                    Đồng ý
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1055">
+    <div id="favoriteToast" class="toast align-items-center text-white border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body fw-bold fs-6" id="favoriteToastMessage">
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .product-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+        .product-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 25px rgba(0,0,0,0.15) !important;
+        }
+</style>
+
+@section Scripts {
+    <script>
+        let currentRemoveId = null;
+        let removeModal = null;
+
+        document.addEventListener("DOMContentLoaded", function() {
+            // Khởi tạo Modal Bootstrap
+            removeModal = new bootstrap.Modal(document.getElementById('removeFavoriteModal'));
+
+            // Bắt sự kiện khi click nút "Đồng ý" trong Modal
+            document.getElementById('confirmRemoveBtn').addEventListener('click', function() {
+                if (currentRemoveId) {
+                    executeRemove(currentRemoveId);
+                }
+            });
+        });
+
+        // Hàm mở Popup và lưu lại ID sản phẩm cần xóa
+        function openRemoveModal(productId) {
+            currentRemoveId = productId;
+            removeModal.show();
+        }
+
+        // Hàm thực thi xóa (gọi API)
+        function executeRemove(productId) {
+            // Đổi text nút thành Đang xử lý để nhìn mượt hơn
+            let btnConfirm = document.getElementById('confirmRemoveBtn');
+            let originalText = btnConfirm.innerHTML;
+            btnConfirm.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            btnConfirm.disabled = true;
+
+            fetch('/Product/ToggleFavorite?productId=' + productId, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Trả lại trạng thái nút và đóng Modal xác nhận
+                btnConfirm.innerHTML = originalText;
+                btnConfirm.disabled = false;
+                removeModal.hide();
+
+                if (data.success === true && data.isFavorite === false) {
+                    let card = document.getElementById('fav-card-' + productId);
+                    if (card) {
+                        // Hiệu ứng mờ dần và thu nhỏ trước khi xóa
+                        card.style.transition = "opacity 0.3s ease, transform 0.3s ease";
+                        card.style.opacity = "0";
+                        card.style.transform = "scale(0.8)";
+
+                        setTimeout(() => {
+                            card.remove();
+                            // Đếm lại số lượng sản phẩm
+                            let remaining = document.querySelectorAll('[id^="fav-card-"]').length;
+
+                            // Cập nhật số trên tiêu đề
+                            let countSpan = document.getElementById('favCountText');
+                            if (countSpan) countSpan.innerText = remaining;
+
+                            // BẬT POPUP TOAST THÔNG BÁO XÓA THÀNH CÔNG
+                            let toastEl = document.getElementById('favoriteToast');
+                            let toastMsg = document.getElementById('favoriteToastMessage');
+                            toastMsg.innerHTML = '<i class="fas fa-check-circle me-2 fs-5"></i>Đã xóa khỏi danh sách yêu thích!';
+                            toastEl.className = 'toast align-items-center text-white bg-success border-0 shadow-lg';
+                            let toast = new bootstrap.Toast(toastEl, { delay: 3000 });
+                            toast.show();
+
+                            // Reload lại trang nếu xóa hết sạch sản phẩm (Chờ 1.5s để khách xem xong thông báo)
+                            if(remaining === 0) {
+                                setTimeout(() => location.reload(), 1500);
+                            }
+                        }, 300);
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                btnConfirm.innerHTML = originalText;
+                btnConfirm.disabled = false;
+                removeModal.hide();
+            });
+        }
+    </script>
+}

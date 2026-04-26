@@ -1,0 +1,59 @@
+﻿@model DoAnTotNghiep.Models.Product
+
+@{
+    ViewData["Title"] = "Thêm Sản phẩm";
+}
+
+<div class="container mt-4">
+    <h2>Thêm sản phẩm mới</h2>
+
+    <div class="row">
+        <div class="col-md-8">
+            <form asp-area="Admin" asp-controller="Product" asp-action="Create"
+                  method="post" enctype="multipart/form-data">
+
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                <div class="form-group mb-3">
+                    <label class="control-label fw-bold">Tên sản phẩm <span class="text-danger">*</span></label>
+                    <input asp-for="ProductName" class="form-control" placeholder="Nhập tên sản phẩm..." />
+                    <span asp-validation-for="ProductName" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label class="control-label fw-bold">Danh mục <span class="text-danger">*</span></label>
+                    <select asp-for="CategoryId" class="form-control" asp-items="ViewBag.CategoryId">
+                        <option value="">-- Chọn danh mục --</option>
+                    </select>
+                    <span asp-validation-for="CategoryId" class="text-danger fw-bold small"></span>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label class="control-label fw-bold">Thương hiệu</label>
+                    <select asp-for="BrandId" class="form-control" asp-items="ViewBag.BrandId">
+                        <option value="">-- Chọn thương hiệu --</option>
+                    </select>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label class="control-label fw-bold">Ảnh sản phẩm đại diện</label>
+                    <input type="file" name="imageFile" class="form-control" />
+                    <small class="text-muted d-block mt-1">Ảnh này sẽ hiển thị ngoài trang chủ (Bên ngoài danh sách sản phẩm).</small>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label class="control-label fw-bold">Mô tả chi tiết</label>
+                    <textarea asp-for="Description" class="form-control" rows="6" placeholder="Mô tả các tính năng nổi bật..."></textarea>
+                </div>
+
+                <div class="mt-4 mb-5">
+                    <button type="submit" class="btn btn-primary fw-bold shadow-sm px-4">
+                        <i class="fas fa-save me-1"></i> Lưu sản phẩm
+                    </button>
+                    <a asp-action="Index" class="btn btn-secondary shadow-sm px-4 ms-2">Hủy bỏ</a>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>

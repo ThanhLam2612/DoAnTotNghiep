@@ -1,0 +1,375 @@
+﻿@using DoAnTotNghiep.Models
+@using Microsoft.EntityFrameworkCore
+@inject AppDbContext _context
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - MyShop</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/DoAnTotNghiep.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        .navbar-nav .nav-item .nav-link {
+            transition: color 0.3s ease-in-out;
+        }
+
+        .navbar-nav .nav-item:hover > .nav-link:not(.text-danger) {
+            color: #0d6efd !important;
+        }
+
+        .dropdown:hover > .dropdown-menu {
+            display: block;
+            margin-top: 0;
+        }
+
+        .dropdown-submenu {
+            position: relative;
+        }
+
+            .dropdown-submenu > .dropdown-menu {
+                top: 0;
+                left: 100%;
+                margin-top: -1px;
+                display: none;
+                min-width: 280px;
+            }
+
+            .dropdown-submenu:hover > .dropdown-menu {
+                display: block;
+            }
+
+            .dropdown-submenu:hover > .dropdown-item {
+                color: #0d6efd !important;
+                background-color: #f8fbff;
+            }
+
+        .dropdown-item.active, .dropdown-item:active {
+            background-color: #f8fbff;
+            color: #0d6efd;
+        }
+
+        .brand-hover-item {
+            transition: all 0.2s ease-in-out;
+            height: 45px;
+            border: 1px solid #dee2e6;
+        }
+
+            .brand-hover-item:hover {
+                border-color: #0d6efd !important;
+                box-shadow: 0 3px 8px rgba(13,110,253,0.15);
+                background-color: #f8fbff;
+                transform: translateY(-2px);
+            }
+
+        .footer-link {
+            transition: color 0.3s ease;
+        }
+
+            .footer-link:hover {
+                color: #0d6efd !important;
+                text-decoration: underline !important;
+            }
+    </style>
+</head>
+
+<body>
+    @{
+        int cartCount = 0;
+        if (User.Identity.IsAuthenticated)
+        {
+            var currentUser = await _context.AppUsers.FirstOrDefaultAsync(u => u.Username == User.Identity.Name);
+
+            if (currentUser != null)
+            {
+                cartCount = await _context.CartItems
+                .Where(c => c.UserId == currentUser.UserId)
+                .SumAsync(c => c.Quantity);
+            }
+        }
+    }
+
+    <header class="sticky-top bg-white border-bottom box-shadow" style="z-index: 1050;">
+        <nav class="navbar navbar-expand-sm navbar-light bg-white py-2">
+            <div class="container">
+                <a class="navbar-brand fw-bold text-primary fs-3" asp-area="" asp-controller="Home" asp-action="Index">
+                    MyShop
+                </a>
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1 ms-4">
+                        <li class="nav-item">
+                            <a class="nav-link text-dark fw-bold" asp-area="" asp-controller="Home" asp-action="Index">Trang chủ</a>
+                        </li>
+
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-dark fw-bold" asp-area="" asp-controller="Product" asp-action="Index" id="categoryDropdown" aria-expanded="false">
+                                Sản phẩm
+                            </a>
+                            <ul class="dropdown-menu shadow border-0 py-2" aria-labelledby="categoryDropdown">
+                                @{
+                                    var categoriesWithBrands = await _context.Categories
+                                    .Include(c => c.Products)
+                                    .ThenInclude(p => p.Brand)
+                                    .ToListAsync();
+                                }
+
+                                @foreach (var cat in categoriesWithBrands)
+                                {
+                                    var relatedBrands = cat.Products
+                                    .Where(p => p.Brand != null)
+                                    .Select(p => p.Brand)
+                                    .GroupBy(b => b.BrandId)
+                                    .Select(g => g.First())
+                                    .ToList();
+
+                                    <li class="dropdown-submenu">
+                                        <a class="dropdown-item py-2 d-flex justify-content-between align-items-center fw-bold text-secondary"
+                                           asp-area="" asp-controller="Product" asp-action="Index" asp-route-categoryId="@cat.CategoryId">
+                                            @cat.CategoryName
+
+                                            @if (relatedBrands.Any())
+                                            {
+                                                <i class="fas fa-chevron-right small text-muted"></i>
+                                            }
+                                        </a>
+
+                                        @if (relatedBrands.Any())
+                                        {
+                                            <ul class="dropdown-menu shadow border-0 p-3">
+                                                <div class="row g-2">
+                                                    <div class="col-12 mb-1">
+                                                        <span class="text-muted small fw-bold text-uppercase">Chọn hãng</span>
+                                                    </div>
+                                                    @foreach (var brand in relatedBrands)
+                                                    {
+                                                        <div class="col-6">
+                                                            <a asp-controller="Product" asp-action="Index" asp-route-categoryId="@cat.CategoryId" asp-route-brandId="@brand.BrandId"
+                                                               class="text-decoration-none text-dark d-flex align-items-center justify-content-center rounded brand-hover-item" title="@brand.BrandName">
+
+                                                                @if (!string.IsNullOrEmpty(brand.LogoUrl))
+                                                                {
+                                                                    <img src="@brand.LogoUrl" alt="@brand.BrandName" style="max-height: 25px; max-width: 90%; object-fit: contain;" />
+                                                                }
+                                                                else
+                                                                {
+                                                                    <span class="small fw-bold">@brand.BrandName</span>
+                                                                }
+                                                            </a>
+                                                        </div>
+                                                    }
+                                                </div>
+                                            </ul>
+                                        }
+                                    </li>
+                                }
+                            </ul>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark fw-bold" asp-area="" asp-controller="News" asp-action="Index">Tin tức</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark fw-bold" asp-area="" asp-controller="Contact" asp-action="Index">Liên hệ</a>
+                        </li>
+
+                        <form class="d-flex mx-auto me-3" asp-area="" asp-controller="Product" asp-action="Index" method="get" style="width: 350px;">
+                            <input class="form-control me-1 border-primary" type="search" name="searchString" placeholder=" Tìm kiếm sản phẩm..." value="@ViewBag.SearchKeyword" aria-label="Search">
+                            <button class="btn btn-primary fw-bold" type="submit">Tìm</button>
+                        </form>
+                    </ul>
+
+                    <ul class="navbar-nav align-items-center">
+
+                        @if (User.Identity.IsAuthenticated)
+                        {
+                            <li class="nav-item">
+                                <a asp-area="" asp-controller="Product" asp-action="Favorites" class="btn btn-outline-danger position-relative border-0 shadow-none fw-bold me-2 d-flex align-items-center">
+                                    <i class="fas fa-heart fs-5"></i>
+                                    <span class="d-none d-md-inline ms-1">Yêu thích</span>
+                                </a>
+                            </li>
+                        }
+
+                        <li class="nav-item me-3">
+                            @if (User.Identity.IsAuthenticated)
+                            {
+                                <a class="nav-link text-danger fw-bold d-flex align-items-center" asp-area="" asp-controller="Cart" asp-action="Index">
+                                    <i class="fas fa-shopping-cart fs-5 me-1"></i> Giỏ hàng <span class="badge bg-danger rounded-pill ms-1">@cartCount</span>
+                                </a>
+                            }
+                            else
+                            {
+                                <a class="nav-link text-danger fw-bold d-flex align-items-center" href="#" data-bs-toggle="modal" data-bs-target="#loginRequireModal">
+                                    <i class="fas fa-shopping-cart fs-5 me-1"></i> Giỏ hàng <span class="badge bg-danger rounded-pill ms-1">0</span>
+                                </a>
+                            }
+                        </li>
+
+                        @if (User.Identity.IsAuthenticated)
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-primary fw-bold d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" title="Chào, @User.Identity.Name">
+                                    <span class="d-inline-block text-truncate" style="max-width: 120px;">
+                                        Chào, @User.Identity.Name
+                                    </span>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end shadow">
+                                    @if (User.IsInRole("Admin"))
+                                    {
+                                        <li><a class="dropdown-item" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Vào trang Quản trị</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                    }
+                                    else if (User.IsInRole("Employee"))
+                                    {
+                                        <li><a class="dropdown-item" asp-area="Admin" asp-controller="Category" asp-action="Index">Vào trang Quản lý</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                    }
+                                    <li>
+                                        <a class="dropdown-item py-2 fw-bold" asp-area="" asp-controller="Account" asp-action="Profile">
+                                            Thông tin tài khoản
+                                        </a>
+                                    </li>
+                                    <li><a class="dropdown-item" asp-area="" asp-controller="Order" asp-action="Index">Đơn hàng của tôi</a></li>
+                                    <li><a class="dropdown-item" asp-area="" asp-controller="Account" asp-action="ChangePassword">Đổi mật khẩu</a></li>
+                                    <li>
+                                        <a class="dropdown-item text-danger fw-bold" href="#" data-bs-toggle="modal" data-bs-target="#logoutConfirmModal">
+                                            Đăng xuất
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-primary fw-bold" asp-area="" asp-controller="Account" asp-action="Login">Đăng nhập</a>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container mt-4">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <div class="modal fade" id="logoutConfirmModal" tabindex="-1" aria-labelledby="logoutConfirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header bg-danger text-white rounded-top-4 border-0">
+                    <h5 class="modal-title fw-bold" id="logoutConfirmModalLabel">
+                        <i class="fas fa-sign-out-alt me-2"></i>Xác nhận đăng xuất
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4 text-center">
+                    <div class="text-danger mb-3">
+                        <i class="fas fa-exclamation-circle" style="font-size: 3rem;"></i>
+                    </div>
+                    <p class="fs-5 mb-0 fw-bold text-dark">Bạn có chắc chắn muốn đăng xuất?</p>
+                    <p class="text-muted small mt-2">Bạn sẽ cần đăng nhập lại để xem đơn hàng và giỏ hàng.</p>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0 justify-content-center gap-2">
+                    <button type="button" class="btn btn-light fw-bold px-4 rounded-pill" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <a asp-area="" asp-controller="Account" asp-action="Logout" class="btn btn-danger fw-bold px-4 rounded-pill shadow-sm">
+                        Đăng xuất
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="loginRequireModal" tabindex="-1" aria-labelledby="loginRequireModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header bg-warning text-dark rounded-top-4 border-0">
+                    <h5 class="modal-title fw-bold" id="loginRequireModalLabel">
+                        <i class="fas fa-lock me-2"></i>Yêu cầu đăng nhập
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4 text-center">
+                    <div class="text-warning mb-3">
+                        <i class="fas fa-user-circle" style="font-size: 3rem;"></i>
+                    </div>
+                    <p class="fs-5 mb-0 fw-bold text-dark">Vui lòng đăng nhập!</p>
+                    <p class="text-muted small mt-2">Bạn cần đăng nhập để có thể xem và quản lý giỏ hàng của mình.</p>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0 justify-content-center gap-2">
+                    <button type="button" class="btn btn-light fw-bold px-4 rounded-pill" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <a asp-area="" asp-controller="Account" asp-action="Login" class="btn btn-primary fw-bold px-4 rounded-pill shadow-sm">
+                        Đăng nhập
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-dark text-light pt-5 pb-4 mt-5">
+        <div class="container text-md-left">
+            <div class="row text-md-left">
+
+                <div class="col-md-4 col-lg-4 col-xl-4 mx-auto mt-3">
+                    <h5 class="text-uppercase mb-4 fw-bold text-primary">MYSHOP</h5>
+                    <p class="text-secondary lh-lg" style="text-align: justify;">
+                        Hệ thống bán lẻ công nghệ hàng đầu. Chúng tôi cam kết mang đến những sản phẩm chất lượng, chính hãng với dịch vụ chăm sóc khách hàng tận tâm nhất.
+                    </p>
+                </div>
+
+                <div class="col-md-2 col-lg-2 col-xl-2 mx-auto mt-3">
+                    <h5 class="text-uppercase mb-4 fw-bold">CHÍNH SÁCH</h5>
+                    <p><a href="#" class="text-secondary text-decoration-none footer-link">Chính sách bảo hành</a></p>
+                    <p><a href="#" class="text-secondary text-decoration-none footer-link">Chính sách đổi trả</a></p>
+                    <p><a href="#" class="text-secondary text-decoration-none footer-link">Bảo mật thông tin</a></p>
+                    <p><a href="#" class="text-secondary text-decoration-none footer-link">Hướng dẫn thanh toán</a></p>
+                </div>
+
+                <div class="col-md-2 col-lg-2 col-xl-2 mx-auto mt-3">
+                    <h5 class="text-uppercase mb-4 fw-bold">LIÊN KẾT NHANH</h5>
+                    <p><a asp-controller="Home" asp-action="Index" class="text-secondary text-decoration-none footer-link">Trang chủ</a></p>
+                    <p><a asp-controller="Product" asp-action="Index" class="text-secondary text-decoration-none footer-link">Tất cả sản phẩm</a></p>
+                    <p><a asp-controller="News" asp-action="Index" class="text-secondary text-decoration-none footer-link">Tin tức công nghệ</a></p>
+                    <p><a asp-controller="Contact" asp-action="Index" class="text-secondary text-decoration-none footer-link">Liên hệ hỗ trợ</a></p>
+                </div>
+
+                <div class="col-md-4 col-lg-3 col-xl-3 mx-auto mt-3">
+                    <h5 class="text-uppercase mb-4 fw-bold">THÔNG TIN LIÊN HỆ</h5>
+                    <p class="text-secondary mb-3">
+                        <i class="fas fa-map-marker-alt me-2 fs-5 text-primary"></i> 123 Đường Công Nghệ, Hà Nội
+                    </p>
+                    <p class="text-secondary mb-3">
+                        <i class="fas fa-phone-alt me-2 fs-5 text-primary"></i> 0987.654.321
+                    </p>
+                    <p class="text-secondary mb-3">
+                        <i class="fas fa-envelope me-2 fs-5 text-primary"></i> hotro@myshop.com
+                    </p>
+                </div>
+            </div>
+
+            <hr class="mb-4 border-secondary">
+
+            <div class="row align-items-center">
+                <div class="col-12 text-center text-secondary">
+                    <p class="mb-0">
+                        &copy; 2026 Bản quyền thuộc về <strong class="text-primary">MyShop</strong>. Thiết kế bởi <strong>Lưu Thành Lâm</strong>.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

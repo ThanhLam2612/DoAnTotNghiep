@@ -1,0 +1,142 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Admin Panel</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        .sidebar {
+            width: 260px;
+            min-height: 100vh;
+            background-color: #212529;
+            flex-shrink: 0;
+        }
+            .sidebar .nav-link {
+                color: #adb5bd;
+                padding: 12px 20px;
+                border-radius: 5px;
+                margin-bottom: 5px;
+                transition: all 0.3s;
+            }
+                .sidebar .nav-link:hover, .sidebar .nav-link.active {
+                    background-color: #0d6efd;
+                    color: white;
+                }
+        .main-content {
+            flex-grow: 1;
+            background-color: #f8f9fa;
+            min-height: 100vh;
+            min-width: 0; 
+        }
+    </style>
+</head>
+<body>
+    <div class="d-flex">
+
+        <nav class="sidebar p-3 d-flex flex-column">
+            <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index" class="text-decoration-none mb-4 mt-2 text-center">
+                <h4 class="text-warning fw-bold m-0">MYSHOP</h4>
+            </a>
+
+            <hr class="text-secondary mt-0" />
+
+            <ul class="nav flex-column mb-auto">
+                @if (User.IsInRole("Admin"))
+                {
+                    <li class="nav-item">
+                        <a class="nav-link" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">
+                            Trang chủ
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-area="Admin" asp-controller="User" asp-action="Index">
+                           Người dùng
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-area="Admin" asp-controller="Promotion" asp-action="Index">
+                            Khuyến mãi
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-area="Admin" asp-controller="Slider" asp-action="Index">
+                            Slider
+                        </a>
+                    </li>
+                }
+                <li class="nav-item">
+                    <a class="nav-link" asp-area="Admin" asp-controller="Category" asp-action="Index">
+                        Danh mục
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" asp-area="Admin" asp-controller="Brand" asp-action="Index">
+                        Thương hiệu
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" asp-area="Admin" asp-controller="Product" asp-action="Index">
+                        Sản phẩm
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" asp-area="Admin" asp-controller="ProductAttribute" asp-action="Index">
+                        Tùy chọn 
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" asp-area="Admin" asp-controller="Order" asp-action="Index">
+                        Đơn hàng
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a class="nav-link" asp-area="Admin" asp-controller="Review" asp-action="Index">
+                        Đánh giá
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" asp-area="Admin" asp-controller="News" asp-action="Index">
+                        Tin tức & Sự kiện
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" asp-area="Admin" asp-controller="Contact" asp-action="Index">
+                        Quản lý Liên hệ
+                    </a>
+                </li>
+            </ul>
+
+            <hr class="text-secondary" />
+
+            <div>
+                <a class="btn btn-outline-info w-100 mb-2" asp-area="" asp-controller="Home" asp-action="Index">
+                    Xem Website
+                </a>
+            </div>
+        </nav>
+
+        <div class="main-content">
+            <header class="bg-white shadow-sm p-3 mb-4 d-flex justify-content-between align-items-center">
+                <h5 class="m-0 text-muted">Hệ thống quản trị</h5>
+
+                <div class="d-flex align-items-center">
+                    <span class="text-primary fw-bold me-3">Xin chào, @(User.Identity?.Name ?? "Quản trị viên")</span>
+                </div>
+            </header>
+
+            <div class="container-fluid px-4 pb-4">
+                @RenderBody()
+            </div>
+        </div>
+
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

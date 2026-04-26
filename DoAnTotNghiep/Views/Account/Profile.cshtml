@@ -1,0 +1,58 @@
+﻿
+@model DoAnTotNghiep.Models.AppUser
+@{
+    ViewData["Title"] = "Thông tin tài khoản";
+}
+
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 rounded-3">
+                <div class="card-header bg-primary text-white text-center py-4">
+                    <h4 class="mb-0 fw-bold">THÔNG TIN CÁ NHÂN</h4>
+                </div>
+                <div class="card-body p-4 p-md-5 lh-lg fs-5">
+
+                    <div class="row border-bottom py-2 mb-2">
+                        <div class="col-sm-5 text-muted fw-bold">Họ và tên:</div>
+                        <div class="col-sm-7 text-primary fw-bold">@Model.FullName</div>
+                    </div>
+
+                    <div class="row border-bottom py-2 mb-2">
+                        <div class="col-sm-5 text-muted fw-bold">Tên đăng nhập:</div>
+                        <div class="col-sm-7">@Model.Username</div>
+                    </div>
+
+                    <div class="row border-bottom py-2 mb-2">
+                        <div class="col-sm-5 text-muted fw-bold">Số điện thoại:</div>
+                        <div class="col-sm-7">@Model.Phone</div>
+                    </div>
+
+                    <div class="row border-bottom py-2 mb-2">
+                        <div class="col-sm-5 text-muted fw-bold">Email:</div>
+                        <div class="col-sm-7">@Model.Email</div>
+                    </div>
+
+                    <div class="row border-bottom py-2 mb-2">
+                        <div class="col-sm-5 text-muted fw-bold">Ngày sinh:</div>
+                        <div class="col-sm-7">
+                            @(Model.DateOfBirth.HasValue? Model.DateOfBirth.Value.ToString("dd/MM/yyyy") : "Chưa cập nhật")
+                        </div>
+                    </div>
+
+                    <hr class="my-4" />
+
+                    <div class="d-flex justify-content-between">
+                        <a asp-controller="Order" asp-action="Index" class="btn btn-outline-primary fw-bold px-4">
+                            Đơn hàng của tôi
+                        </a>
+                        <a asp-controller="Account" asp-action="EditProfile" class="btn btn-warning fw-bold px-4 text-dark shadow-sm">
+                            Cập nhật thông tin
+                        </a>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

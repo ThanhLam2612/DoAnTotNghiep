@@ -1,0 +1,70 @@
+﻿
+@model DoAnTotNghiep.Models.Product
+
+@{
+    ViewData["Title"] = "Sửa Sản phẩm";
+}
+
+<div class="card shadow-sm mt-4">
+    <div class="card-header bg-warning text-dark">
+        <h4 class="mb-0">Sửa Sản phẩm: @Model.ProductName</h4>
+    </div>
+    <div class="card-body">
+        <form asp-area="Admin" asp-controller="Product" asp-action="Edit" method="post" enctype="multipart/form-data">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <input type="hidden" asp-for="ProductId" />
+            <input type="hidden" asp-for="ThumbnailUrl" />
+
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="form-group mb-3">
+                        <label class="control-label fw-bold">Tên sản phẩm</label>
+                        <input asp-for="ProductName" class="form-control" />
+                        <span asp-validation-for="ProductName" class="text-danger"></span>
+                    </div>
+
+
+                    <div class="form-group mb-3">
+                        <label class="control-label fw-bold">Danh mục</label>
+                        <select asp-for="CategoryId" class="form-control" asp-items="ViewBag.CategoryId"></select>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label class="control-label fw-bold">Thương hiệu</label>
+                        <select asp-for="BrandId" class="form-control" asp-items="ViewBag.BrandId">
+                            <option value="">-- Chọn thương hiệu --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label class="control-label fw-bold">Ảnh sản phẩm</label>
+                        <input type="file" name="imageFile" class="form-control" accept="image/*" />
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label class="control-label fw-bold">Mô tả</label>
+                        <textarea asp-for="Description" class="form-control" rows="4"></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-success">Lưu thay đổi</button>
+                    <a asp-action="Index" class="btn btn-secondary">Quay lại danh sách</a>
+                </div>
+
+                <div class="col-md-4 text-center mt-4">
+                    <label class="fw-bold mb-2">Ảnh hiện tại</label>
+                    <div class="border p-2">
+                        @if (!string.IsNullOrEmpty(Model.ThumbnailUrl))
+                        {
+                            <img src="@Model.ThumbnailUrl" style="max-width: 100%; height: auto;" alt="Ảnh sản phẩm" />
+                        }
+                        else
+                        {
+                            <span class="text-muted">Chưa có ảnh</span>
+                        }
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

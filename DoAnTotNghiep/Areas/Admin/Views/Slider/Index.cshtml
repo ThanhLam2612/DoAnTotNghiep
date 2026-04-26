@@ -1,0 +1,139 @@
+﻿@model IEnumerable<DoAnTotNghiep.Models.Slider>
+
+@{
+    ViewData["Title"] = "Quản lý Slider (Banner)";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid px-4 mt-4 mb-5">
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show fw-bold shadow-sm">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show fw-bold shadow-sm">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-primary m-0">Quản lý Slide Trang chủ</h2>
+        <a asp-action="Create" class="btn btn-primary fw-bold shadow-sm rounded-pill px-4">
+            <i class="fas fa-plus me-1"></i> Thêm Slide mới
+        </a>
+    </div>
+
+    <div class="card shadow border-0 rounded-4">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-primary text-white">
+                        <tr>
+                            <th class="py-3 px-4 text-center" style="width: 10%;">Thứ tự</th>
+                            <th class="py-3" style="width: 30%;">Hình ảnh</th>
+                            <th class="py-3" style="width: 25%;">Thông tin</th>
+                            <th class="py-3 text-center" style="width: 15%;">Trạng thái</th>
+                            <th class="py-3 text-center" style="width: 20%;">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td class="text-center fw-bold fs-5 text-muted px-4">
+                                        @item.DisplayOrder
+                                    </td>
+                                    <td>
+                                        <div class="border rounded shadow-sm overflow-hidden" style="max-height: 120px;">
+                                            <img src="@item.ImageUrl" alt="@item.Title" class="img-fluid w-100" style="object-fit: cover;" />
+                                        </div>
+                                    </td>
+                                    <td class="px-3">
+                                        <h6 class="fw-bold text-dark mb-1">@(string.IsNullOrEmpty(item.Title) ? "[Không có tiêu đề]" : item.Title)</h6>
+                                        <div class="small text-muted mb-2 text-truncate" style="max-width: 250px;">
+                                            @(string.IsNullOrEmpty(item.Description) ? "..." : item.Description)
+                                        </div>
+
+                                        <div class="mt-2 pt-2 border-top border-light" style="font-size: 0.8rem;">
+                                            <div class="text-secondary">
+                                                <i class="fas fa-user-edit me-1"></i>
+                                                Bởi: <span class="fw-bold">@(item.UpdatedBy ?? item.CreatedBy ?? "Admin")</span>
+                                            </div>
+                                            <div class="text-secondary mt-1">
+                                                <i class="fas fa-clock me-1"></i>
+                                                Lúc: @(item.UpdatedAt?.ToString("dd/MM/yyyy HH:mm") ?? item.CreatedAt.ToString("dd/MM/yyyy HH:mm"))
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        @if (item.IsActive)
+                                        {
+                                            <span class="badge bg-success shadow-sm px-3 py-2">Đang hiển thị</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary shadow-sm px-3 py-2">Đang ẩn</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group shadow-sm">
+                                            <a asp-action="Edit" asp-route-id="@item.SliderId" class="btn btn-sm btn-outline-primary" title="Sửa"><i class="fas fa-edit"></i></a>
+                                            <button type="button" class="btn btn-sm btn-outline-warning"
+                                                    onclick="promptSwap(@item.SliderId, @item.DisplayOrder)" title="Hoán đổi vị trí">
+                                                <i class="fas fa-retweet"></i>
+                                            </button>
+                                            <a asp-action="Delete" asp-route-id="@item.SliderId" class="btn btn-sm btn-outline-danger" onclick="return confirm('Bạn có chắc chắn muốn xóa Slide này? Các Slide phía sau sẽ tự động dồn lên!');" title="Xóa"><i class="fas fa-trash-alt"></i></a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center py-5 text-muted fw-bold">
+                                    <i class="bi bi-image text-light" style="font-size: 3rem;"></i><br />
+                                    Chưa có Slide nào ngoài trang chủ!
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function promptSwap(currentId, currentOrder) {
+        let targetOrder = prompt(`Slide này đang ở vị trí #${currentOrder}.\nNhập SỐ THỨ TỰ của Slide bạn muốn đổi chỗ cùng:`);
+
+        if (targetOrder && parseInt(targetOrder) !== currentOrder) {
+            let form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '@Url.Action("SwapOrder", "Slider")';
+
+            let input1 = document.createElement('input');
+            input1.type = 'hidden';
+            input1.name = 'currentId';
+            input1.value = currentId;
+
+            let input2 = document.createElement('input');
+            input2.type = 'hidden';
+            input2.name = 'targetOrder';
+            input2.value = parseInt(targetOrder);
+
+            form.appendChild(input1);
+            form.appendChild(input2);
+            document.body.appendChild(form);
+            form.submit();
+        }
+    }
+</script>

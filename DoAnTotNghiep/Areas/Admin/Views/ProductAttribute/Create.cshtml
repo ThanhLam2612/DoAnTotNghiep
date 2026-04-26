@@ -1,0 +1,70 @@
+﻿@model DoAnTotNghiep.Models.ProductAttribute
+@{
+    ViewData["Title"] = "Thêm Tùy chọn mới";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+    // Lấy danh sách danh mục từ Controller truyền sang
+    var categories = ViewBag.Categories as List<DoAnTotNghiep.Models.Category>;
+}
+
+<div class="container-fluid mb-5">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Thêm Tùy chọn Sản phẩm</h1>
+        <a asp-action="Index" class="btn btn-sm btn-secondary shadow-sm">
+            <i class="fas fa-arrow-left fa-sm text-white-50"></i> Quay lại
+        </a>
+    </div>
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger shadow-sm">
+            <i class="fas fa-exclamation-triangle"></i> Vui lòng kiểm tra lại thông tin nhập vào!
+        </div>
+    }
+
+    <div class="card shadow mb-4 border-left-primary">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Thông tin Tùy chọn</h6>
+        </div>
+        <div class="card-body">
+            <form asp-action="Create">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="AttributeName" class="form-label fw-bold">Tên tùy chọn <span class="text-danger">*</span></label>
+                        <input asp-for="AttributeName" class="form-control" placeholder="VD: Màu sắc, Dung lượng RAM, Kích thước..." required />
+                        <span asp-validation-for="AttributeName" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="CategoryId" class="form-label fw-bold">Danh mục áp dụng</label>
+                        <select asp-for="CategoryId" class="form-select form-control">
+                            <option value="">-- Dùng chung (Tất cả danh mục) --</option>
+                            @if (categories != null)
+                            {
+                                foreach (var cat in categories)
+                                {
+                                    <option value="@cat.CategoryId">@cat.CategoryName</option>
+                                }
+                            }
+                        </select>
+                        <span asp-validation-for="CategoryId" class="text-danger small"></span>
+                        <small class="text-muted d-block mt-1">
+                            <i class="fas fa-info-circle"></i> Bỏ trống nếu thuộc tính này (VD: Màu sắc) có thể dùng cho mọi loại sản phẩm.
+                        </small>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary fw-bold px-5 py-2 shadow-sm">
+                        <i class="fas fa-save me-1"></i> THÊM MỚI
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

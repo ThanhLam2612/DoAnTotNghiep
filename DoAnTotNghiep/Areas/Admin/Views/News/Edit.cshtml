@@ -1,0 +1,88 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}
+@model DoAnTotNghiep.Models.News
+
+@{
+    ViewData["Title"] = "Sửa Tin tức";
+}
+
+<div class="card shadow-sm mt-4">
+    <div class="card-header bg-warning text-dark">
+        <h4 class="mb-0">Sửa Bài viết: @Model.Title</h4>
+    </div>
+    <div class="card-body">
+        <form asp-action="Edit" method="post" enctype="multipart/form-data">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <input type="hidden" asp-for="NewsId" />
+            <input type="hidden" asp-for="ImageUrl" />
+            <input type="hidden" asp-for="CreatedDate" />
+
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="form-group mb-3">
+                        <label class="control-label fw-bold">Tiêu đề bài viết</label>
+                        <input asp-for="Title" class="form-control" />
+                        <span asp-validation-for="Title" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label class="control-label fw-bold">Ảnh đại diện (Chọn ảnh mới để thay đổi)</label>
+                        <input type="file" name="imageFile" class="form-control" accept="image/*" />
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label class="control-label fw-bold">Mô tả ngắn</label>
+                        <textarea asp-for="ShortDescription" class="form-control" rows="2"></textarea>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label class="control-label fw-bold">Nội dung chi tiết</label>
+                        <textarea asp-for="Content" id="editor" class="form-control" rows="10"></textarea>
+                        <span asp-validation-for="Content" class="text-danger"></span>
+                    </div>
+
+                    <button type="submit" class="btn btn-success mt-3">Lưu thay đổi</button>
+                    <a asp-action="Index" class="btn btn-secondary mt-3 ms-2">Quay lại danh sách</a>
+                </div>
+
+                <div class="col-md-4 text-center">
+                    <label class="fw-bold mb-2">Ảnh hiện tại</label>
+                    <div class="border p-2">
+                        @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                        {
+                            <img src="@Model.ImageUrl" style="max-width: 100%; height: auto;" alt="Ảnh bài viết" />
+                        }
+                        else
+                        {
+                            <span class="text-muted">Chưa có ảnh</span>
+                        }
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+@section Scripts {
+    <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
+
+    <script>
+        ClassicEditor
+            .create(document.querySelector('#editor'), {
+                // BỔ SUNG ĐOẠN CẤU HÌNH UPLOAD NÀY
+                ckfinder: {
+                    uploadUrl: '/Admin/News/UploadImage'
+                }
+            })
+            .catch(error => {
+                console.error(error);
+            });
+    </script>
+
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

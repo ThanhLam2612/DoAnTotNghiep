@@ -1,0 +1,60 @@
+﻿@model DoAnTotNghiep.Models.News
+
+@{
+    ViewData["Title"] = "Thêm Tin tức";
+}
+
+<div class="card shadow-sm mt-4">
+    <div class="card-header bg-success text-white">
+        <h4 class="mb-0">Thêm Bài viết mới</h4>
+    </div>
+    <div class="card-body">
+        <form asp-action="Create" method="post" enctype="multipart/form-data">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="form-group mb-3">
+                <label class="control-label fw-bold">Tiêu đề bài viết</label>
+                <input asp-for="Title" class="form-control" />
+                <span asp-validation-for="Title" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label class="control-label fw-bold">Ảnh đại diện (Thumbnail)</label>
+                <input type="file" name="imageFile" class="form-control" accept="image/*" />
+            </div>
+
+            <div class="form-group mb-3">
+                <label class="control-label fw-bold">Mô tả ngắn</label>
+                <textarea asp-for="ShortDescription" class="form-control" rows="2"></textarea>
+            </div>
+
+            <div class="form-group mb-3">
+                <label class="control-label fw-bold">Nội dung chi tiết</label>
+                <textarea asp-for="Content" id="editor" class="form-control" rows="10"></textarea>
+                <span asp-validation-for="Content" class="text-danger"></span>
+            </div>
+
+            <button type="submit" class="btn btn-primary mt-3">Đăng bài viết</button>
+            <a asp-action="Index" class="btn btn-secondary mt-3 ms-2">Hủy bỏ</a>
+        </form>
+    </div>
+</div>
+@section Scripts {
+    <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
+
+    <script>
+        ClassicEditor
+            .create(document.querySelector('#editor'), {
+                ckfinder: {
+                    uploadUrl: '/Admin/News/UploadImage'
+                }
+            })
+            .catch(error => {
+                console.error(error);
+            });
+    </script>
+
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
